@@ -1,70 +1,16 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_THEME, events, partners, personas, programmes, type PersonaId } from './data'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
+import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, themeVars } from './shared'
+import { Header } from './Header'
+import { Footer } from './Footer'
+import { EventCard } from './EventCard'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
-
-/**
- * Font size for a big uppercase heading: the design size (`max`), but never
- * bigger than what lets its longest word fit the screen. `gutter` is the
- * horizontal space taken by padding around the heading.
- */
-function fit(text: string, max: string, gutter: string): React.CSSProperties {
-  const longest = Math.max(4, ...text.split(/\s+/).map((w) => w.length))
-  return { fontSize: `min(${max}, calc((100vw - ${gutter}) / ${(longest * 0.8).toFixed(2)}))` }
-}
-
-/* ------------------------------------------------------------
-   Remembering the visitor. Stored only in their own browser.
-   ------------------------------------------------------------ */
-const KEY_PERSONA = 'hoi.persona'
-const KEY_NAME = 'hoi.name'
-
-function load(key: string) {
-  try { return window.localStorage.getItem(key) } catch { return null }
-}
-function save(key: string, value: string | null) {
-  try {
-    if (value) window.localStorage.setItem(key, value)
-    else window.localStorage.removeItem(key)
-  } catch { /* private mode etc. — personalisation just won't persist */ }
-}
-
-function WaveHand() {
-  return (
-    <svg viewBox="0 0 24 24" className="wave h-[0.9em] w-[0.9em]" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8" />
-      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15" />
-    </svg>
-  )
-}
-
-/** Animation delay for the staggered fade-up on entry. */
-function rise(i: number): React.CSSProperties {
-  return { animationDelay: `${(0.08 * i).toFixed(2)}s` }
-}
-
-/** Split a headline so its second half can carry the brand gradient. */
-function splitHeadline(text: string): [string, string] {
-  const m = text.match(/^(.+?[.?!])\s+(.+)$/)
-  if (m) return [m[1], m[2]]
-  const words = text.split(' ')
-  if (words.length < 4) return [text, '']
-  return [words.slice(0, -2).join(' '), words.slice(-2).join(' ')]
-}
-
-function Arrow() {
-  return (
-    <svg viewBox="0 0 20 20" className="h-[1.05em] w-[1.05em] transition-transform duration-300 ease-out group-hover:translate-x-1" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 10h12M11 5l5 5-5 5" />
-    </svg>
-  )
-}
 
 export function HoiHome() {
   const [persona, setPersona] = useState<PersonaId | null>(null)
@@ -74,7 +20,6 @@ export function HoiHome() {
   const [returning, setReturning] = useState(false)
   const [motion, setMotion] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
-  const [scrolled, setScrolled] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { burst, colourWipe, layer } = useEffects()
@@ -88,14 +33,6 @@ export function HoiHome() {
     if (p && personas.some((x) => x.id === p)) { setPersona(p); setReturning(true); setStep('done') }
     else if (n) setStep('persona')
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [])
-
-  /* header: transparent over the hero, solid once you scroll */
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   /* scroll reveal */
@@ -199,32 +136,10 @@ export function HoiHome() {
     `Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`,
   )
 
-  const themeVars = {
-    ['--c1' as string]: theme.c1, ['--c2' as string]: theme.c2, ['--c3' as string]: theme.c3,
-    ['--accent' as string]: theme.accent, ['--tint' as string]: theme.tint,
-  } as React.CSSProperties
-
   return (
-    <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars}>
+    <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars(theme)}>
       {layer}
-      {/* ================= HEADER ================= */}
-      <header className={`site-header sticky top-0 z-50 ${scrolled ? 'is-scrolled' : ''}`}>
-        <div className="container-x flex h-16 items-center justify-between gap-3 sm:h-[72px]">
-          <a href="#top" aria-label="hoi startup factory, to the top" className="shrink-0">
-            <img src="/logo.png" alt="hoi startup factory" className="h-8 w-auto sm:h-9" />
-          </a>
-          <nav aria-label="Main" className="flex items-center gap-2 text-[15px] font-medium sm:gap-1">
-            <a href="#events" className="nav-link hidden sm:inline-flex">Events</a>
-            <a href="#programmes" className="nav-link hidden sm:inline-flex">Programmes</a>
-            <a href="#about" className="nav-link hidden sm:inline-flex">About</a>
-            <span className="mx-1 flex gap-0.5 rounded-full border border-line bg-white/70 p-1 text-xs font-semibold sm:mx-3">
-              <button type="button" className="rounded-full px-2.5 py-1 text-muted transition-colors hover:text-ink">DE</button>
-              <button type="button" aria-pressed="true" className="rounded-full bg-ink px-2.5 py-1 text-white">EN</button>
-            </span>
-            <a href="#contact" className="btn-primary h-10 px-4 text-sm sm:px-5">Say hoi</a>
-          </nav>
-        </div>
-      </header>
+      <Header active="home" />
 
       {/* ================= HERO ================= */}
       <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
@@ -363,30 +278,14 @@ export function HoiHome() {
               {current ? `Next up for ${current.plural}` : 'Next up at hoi'}
             </h2>
           </div>
-          <a href="#events" className="font-semibold text-accent hover:underline">See all events →</a>
+          <Link href="/events" className="group inline-flex items-center gap-1.5 font-semibold text-accent">See all events <Arrow /></Link>
           <p className="w-full text-sm text-muted sm:hidden" aria-hidden="true">Swipe to see more →</p>
         </div>
 
         <div className="reveal no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-5 px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
           {sortedEvents.map((ev) => {
             const match = persona ? ev.for.includes(persona) : true
-            return (
-              <article key={ev.id}
-                className={`lift relative flex min-h-[320px] w-[80%] shrink-0 snap-start flex-col rounded-[1.4rem] p-6 text-white sm:min-h-[380px] sm:w-auto ${match ? '' : 'opacity-55 saturate-50'}`}
-                style={{ background: ev.gradient }}>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-md border-[1.5px] border-white/80 px-2.5 py-1 text-sm font-bold">{ev.partner}</span>
-                  {persona && match && (
-                    <span className="swap-in shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">Picked for you</span>
-                  )}
-                </div>
-                <span className="pill mt-auto self-start">{ev.label}</span>
-                <h3 lang="de" className="mt-3 text-[clamp(1.45rem,2.1vw,1.85rem)] font-extrabold uppercase leading-none hyphens-manual">{ev.title}</h3>
-                <p className="mt-5 text-sm leading-relaxed text-white/90">
-                  {ev.meta.map((m) => <span key={m} className="block">{m}</span>)}
-                </p>
-              </article>
-            )
+            return <EventCard key={ev.id} ev={ev} match={match} picked={!!persona} row />
           })}
         </div>
       </section>
@@ -485,22 +384,7 @@ export function HoiHome() {
         </div>
       </section>
 
-      {/* ================= FOOTER ================= */}
-      <footer className="container-x flex flex-wrap items-center justify-between gap-6 py-14 text-sm text-muted">
-        <div className="flex items-center gap-5">
-          <img src="/logo.png" alt="" className="h-7 w-auto" />
-          <span>Arberger Hafendamm 1 · 28309 Bremen</span>
-        </div>
-        <div className="flex flex-wrap gap-6">
-          <a href="https://www.instagram.com/hoi_startup_factory/" className="hover:text-ink">Instagram</a>
-          <a href="https://www.linkedin.com/company/hoi-startup-factory/" className="hover:text-ink">LinkedIn</a>
-          <a href="#" className="hover:text-ink">Impressum</a>
-          <a href="#" className="hover:text-ink">Datenschutz</a>
-          {(persona || name) && (
-            <button type="button" onClick={forget} className="hover:text-ink">Reset personalisation</button>
-          )}
-        </div>
-      </footer>
+      <Footer onReset={persona || name ? forget : undefined} />
     </div>
   )
 }
