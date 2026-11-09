@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* ============================================================
+   hoi startup factory — DESIGN TOKENS (current branding)
+   Sampled from the logo: purple #9A00FF · blue #003EFE · teal #00D7B8
+   When the new branding lands, change the values here.
+   ============================================================ */
+@theme {
+  --color-brand-50:  #faf2ff;
+  --color-brand-100: #f3e0ff;
+  --color-brand-200: #e9c6ff;
+  --color-brand-500: #9a00ff;
+  --color-brand-600: #8a00e6;
+  --color-brand-700: #7400c2;
+  --color-brand-950: #22003d;
+
+  --color-electric-500: #3f5cff;
+  --color-electric-600: #003efe;
+
+  --color-teal-400: #2ceccd;
+  --color-teal-500: #00d7b8;
+  --color-teal-700: #00796a;
+
+  --color-ink:     #170a2b;
+  --color-muted:   #5c5670;
+  --color-line:    #e8e4f0;
+  --color-surface: #f8f5fd;
+}
+
+@theme inline {
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: white;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-display { font-family: var(--font-display); }
+
+.container-x {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 1024px) { .container-x { padding-inline: 2rem; } }
+
+.eyebrow {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--color-brand-600);
+}
+
+/* Instagram-style pill label above a headline */
+.pill {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: rgb(255 255 255 / .22);
+}
+
+/* ---------- hero: brand gradient + glow that follows the pointer ---------- */
+.hero-bg {
+  background: linear-gradient(118deg, #00d7b8 0%, #003efe 48%, #9a00ff 100%);
+  background-size: 160% 160%;
+  animation: drift 16s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { background-position: 0% 30%; }
+  to   { background-position: 100% 70%; }
+}
+.hero-glow {
+  background: radial-gradient(420px circle at var(--gx, 70%) var(--gy, 30%), rgb(255 255 255 / .28), transparent 60%);
+  transition: background .2s;
+}
+
+.rings { animation: spin 60s linear infinite; transform-origin: center; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* headline swap when the persona changes */
+.swap-in { animation: swapIn .55s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes swapIn {
+  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+/* soft "hello" wave on the greeting */
+.wave { display: inline-block; transform-origin: 70% 70%; animation: wave 2.4s ease-in-out 1s 2; }
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* ---------- scroll reveal (only once JS is running) ---------- */
+[data-motion="on"] .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1);
+}
+[data-motion="on"] .reveal.is-visible { opacity: 1; transform: none; }
+
+/* ---------- cards ---------- */
+.lift { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, opacity .35s; }
+.lift:hover { transform: translateY(-6px) rotate(-.6deg); box-shadow: 0 24px 50px -20px rgb(23 10 43 / .45); }
+
+/* ---------- partner marquee ---------- */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 40s linear infinite; }
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero-bg, .rings, .wave, .animate-marquee, .swap-in { animation: none; }
+  [data-motion="on"] .reveal { opacity: 1; transform: none; transition: none; }
+  .lift:hover { transform: none; }
+}
