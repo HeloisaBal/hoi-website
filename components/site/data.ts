@@ -6,8 +6,27 @@
 
 export type PersonaId = 'researcher' | 'founder' | 'student' | 'company' | 'investor'
 
+/** Colours the whole page takes on for a persona. All from the brand palette. */
+export type Theme = {
+  /** hero gradient stops */
+  c1: string
+  c2: string
+  c3: string
+  /** buttons, labels, highlights (white text sits on it, so keep it dark enough) */
+  accent: string
+  /** soft page background */
+  tint: string
+}
+
+export const DEFAULT_THEME: Theme = {
+  c1: '#00d7b8', c2: '#003efe', c3: '#9a00ff', accent: '#8a00e6', tint: '#ffffff',
+}
+
 export type Persona = {
   id: PersonaId
+  theme: Theme
+  /** one-word label shown in the theme change moment */
+  word: string
   chip: string
   /** how Hoi greets this person in the hero */
   headline: string
@@ -20,6 +39,8 @@ export type Persona = {
 export const personas: Persona[] = [
   {
     id: 'researcher',
+    theme: { c1: '#2ceccd', c2: '#00ad96', c3: '#003efe', accent: '#00796a', tint: '#ecfcf9' },
+    word: 'Research',
     chip: 'a researcher with an idea',
     headline: 'Your research could be a company.',
     line: 'We help you take an idea out of the lab: first conversations, funding calls and a team around you.',
@@ -28,6 +49,8 @@ export const personas: Persona[] = [
   },
   {
     id: 'founder',
+    theme: { c1: '#c261ff', c2: '#9a00ff', c3: '#003efe', accent: '#8a00e6', tint: '#f8f0ff' },
+    word: 'Build',
     chip: 'a founder',
     headline: 'Build it here. With a tailwind.',
     line: 'Programmes, capital and a network across Bremen, Oldenburg and the whole Northwest.',
@@ -36,6 +59,8 @@ export const personas: Persona[] = [
   },
   {
     id: 'student',
+    theme: { c1: '#2ceccd', c2: '#7089ff', c3: '#9a00ff', accent: '#5a3bd6', tint: '#f2f1ff' },
+    word: 'Learn',
     chip: 'a student',
     headline: 'Curious about founding? Start here.',
     line: 'Learn the basics, meet founders at our events and find a team for your idea.',
@@ -44,6 +69,8 @@ export const personas: Persona[] = [
   },
   {
     id: 'company',
+    theme: { c1: '#3f5cff', c2: '#003efe', c3: '#091a52', accent: '#0032d9', tint: '#eff3ff' },
+    word: 'Partner',
     chip: 'a company',
     headline: 'Meet the ideas that shape your industry.',
     line: 'Work with startups from the region and get early access to new ideas and technologies.',
@@ -52,6 +79,8 @@ export const personas: Persona[] = [
   },
   {
     id: 'investor',
+    theme: { c1: '#00d7b8', c2: '#61019e', c3: '#22003d', accent: '#61019e', tint: '#f5effb' },
+    word: 'Invest',
     chip: 'an investor',
     headline: 'Science-based startups from the Northwest.',
     line: 'Meet the teams coming out of our universities and research institutes, early.',

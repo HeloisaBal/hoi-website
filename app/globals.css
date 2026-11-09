@@ -28,6 +28,9 @@
 }
 
 @theme inline {
+  /* persona theme — set at runtime on the page root */
+  --color-accent: var(--accent);
+  --color-tint: var(--tint);
   --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
@@ -56,7 +59,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   font-weight: 700;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--color-brand-600);
+  color: var(--accent);
 }
 
 /* Instagram-style pill label above a headline */
@@ -73,7 +76,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 
 /* ---------- hero: brand gradient + glow that follows the pointer ---------- */
 .hero-bg {
-  background: linear-gradient(118deg, #00d7b8 0%, #003efe 48%, #9a00ff 100%);
+  background: linear-gradient(118deg, var(--c1) 0%, var(--c2) 48%, var(--c3) 100%);
   background-size: 160% 160%;
   animation: drift 16s ease-in-out infinite alternate;
 }
@@ -131,4 +134,75 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   .hero-bg, .rings, .wave, .animate-marquee, .swap-in { animation: none; }
   [data-motion="on"] .reveal { opacity: 1; transform: none; transition: none; }
   .lift:hover { transform: none; }
+}
+
+/* ============================================================
+   PERSONA THEMES — registered so the colours can animate
+   ============================================================ */
+@property --c1     { syntax: '<color>'; inherits: true; initial-value: #00d7b8; }
+@property --c2     { syntax: '<color>'; inherits: true; initial-value: #003efe; }
+@property --c3     { syntax: '<color>'; inherits: true; initial-value: #9a00ff; }
+@property --accent { syntax: '<color>'; inherits: true; initial-value: #8a00e6; }
+@property --tint   { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
+
+.themed {
+  background: var(--tint);
+  transition: --c1 1s ease, --c2 1s ease, --c3 1s ease, --accent .8s ease, --tint 1.2s ease;
+}
+.themed ::selection { background: var(--accent); color: white; }
+
+/* full-screen colour wipe that grows out of the clicked chip */
+.wipe {
+  position: fixed; inset: 0; z-index: 80; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  animation: wipe 1.15s cubic-bezier(.7,0,.2,1) forwards;
+}
+@keyframes wipe {
+  0%   { clip-path: circle(0 at var(--x) var(--y)); opacity: 1; }
+  45%  { clip-path: circle(150vmax at var(--x) var(--y)); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { clip-path: circle(150vmax at var(--x) var(--y)); opacity: 0; }
+}
+.wipe-word { animation: wipeWord 1.15s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes wipeWord {
+  0%, 15% { opacity: 0; transform: scale(.6); letter-spacing: -.05em; }
+  45%     { opacity: 1; transform: scale(1); letter-spacing: 0; }
+  70%     { opacity: 1; transform: scale(1.06); }
+  100%    { opacity: 0; transform: scale(1.25); }
+}
+
+/* particle burst */
+.burst { position: fixed; z-index: 90; pointer-events: none; width: 0; height: 0; }
+.particle {
+  position: absolute; left: 0; top: 0;
+  animation: fly 1.1s cubic-bezier(.12,.75,.25,1) forwards;
+}
+@keyframes fly {
+  0%   { transform: translate(-50%, -50%) scale(.3) rotate(0); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+
+/* "setting sail" loader */
+.dot { animation: bob .9s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: .12s; }
+.dot:nth-child(3) { animation-delay: .24s; }
+@keyframes bob { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-12px); opacity: 1; } }
+
+/* letters popping in one by one */
+.pop { display: inline-block; animation: pop .6s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(.5em) scale(.4) rotate(-8deg); } to { opacity: 1; transform: none; } }
+
+/* step change inside the hero */
+.step-in { animation: stepIn .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes stepIn { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* the big name field */
+.name-input { caret-color: white; }
+.name-input::placeholder { color: rgb(255 255 255 / .45); }
+
+@media (prefers-reduced-motion: reduce) {
+  .themed { transition: none; }
+  .wipe, .burst { display: none; }
+  .pop, .step-in, .dot { animation: none; }
 }
