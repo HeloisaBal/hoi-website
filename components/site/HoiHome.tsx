@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_THEME, events, partners, personas, programmes, type PersonaId } from './data'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
+import { HeroBackdrop } from './Backdrop'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
@@ -183,7 +184,9 @@ export function HoiHome() {
       </header>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="container-x pt-5">
+      <section id="top" className="relative isolate pt-5">
+        <HeroBackdrop />
+        <div className="container-x">
         <div
           ref={heroRef}
           onPointerMove={onPointerMove}
@@ -305,6 +308,7 @@ export function HoiHome() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </section>
 

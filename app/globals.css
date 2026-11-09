@@ -206,3 +206,58 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   .wipe, .burst { display: none; }
   .pop, .step-in, .dot { animation: none; }
 }
+
+/* ============================================================
+   HERO BACKDROP — colour and movement in the side gutters
+   ============================================================ */
+.backdrop {
+  --px: 0; --py: 0;
+  /* fade out towards the content below */
+  mask-image: linear-gradient(to bottom, black 70%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent);
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: .5;
+  will-change: transform;
+}
+.blob-a { width: 620px; height: 620px; left: -180px; top: 0;      background: var(--c1); animation: blobA 22s ease-in-out infinite alternate; }
+.blob-b { width: 560px; height: 560px; right: -160px; top: 8%;    background: var(--c3); animation: blobB 26s ease-in-out infinite alternate; }
+.blob-c { width: 460px; height: 460px; left: 8%; bottom: 0;       background: var(--c2); opacity: .38; animation: blobC 19s ease-in-out infinite alternate; }
+.blob-d { width: 420px; height: 420px; right: 6%; bottom: 4%;     background: var(--c1); opacity: .35; animation: blobD 24s ease-in-out infinite alternate; }
+@keyframes blobA { from { transform: translate(0, 0) scale(1); }   to { transform: translate(140px, 180px) scale(1.15); } }
+@keyframes blobB { from { transform: translate(0, 0) scale(1.1); } to { transform: translate(-160px, 140px) scale(.9); } }
+@keyframes blobC { from { transform: translate(0, 0) scale(.9); }  to { transform: translate(120px, -120px) scale(1.15); } }
+@keyframes blobD { from { transform: translate(0, 0); }            to { transform: translate(-140px, -90px) scale(1.2); } }
+
+.dotgrid {
+  background-image: radial-gradient(var(--accent) 1.2px, transparent 1.3px);
+  background-size: 26px 26px;
+  opacity: .16;
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, transparent 35%, black 75%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, transparent 35%, black 75%);
+}
+
+.parallax {
+  transform: translate(calc(var(--px) * var(--depth)), calc(var(--py) * var(--depth)));
+  transition: transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.floater { animation: bobble 9s ease-in-out infinite; }
+@keyframes bobble {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33%      { transform: translate(6px, -18px) rotate(12deg); }
+  66%      { transform: translate(-8px, 10px) rotate(-8deg); }
+}
+
+@media (max-width: 767px) {
+  .floater { display: none; }
+  .blob { filter: blur(60px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob, .floater { animation: none; }
+  .parallax { transform: none; transition: none; }
+}
