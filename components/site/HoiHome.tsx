@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_THEME, events, partners, personas, programmes, type PersonaId } from './data'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
+import { HousePhoto } from './HousePhoto'
 import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, themeVars } from './shared'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -117,9 +118,16 @@ export function HoiHome() {
     el.style.setProperty('--gx', `${Math.round(e.clientX - r.left)}px`)
     el.style.setProperty('--gy', `${Math.round(e.clientY - r.top)}px`)
     el.style.setProperty('--spot', '1')
+    // -1..1 across the hero, for the photo's 3D tilt
+    el.style.setProperty('--tx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3))
+    el.style.setProperty('--ty', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3))
   }
   function onPointerLeave() {
-    heroRef.current?.style.setProperty('--spot', '0')
+    const el = heroRef.current
+    if (!el) return
+    el.style.setProperty('--spot', '0')
+    el.style.setProperty('--tx', '0')
+    el.style.setProperty('--ty', '0')
   }
 
   const sortedEvents = useMemo(() => {
@@ -148,7 +156,7 @@ export function HoiHome() {
         <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
 
         <div className="container-x py-20 sm:py-28 lg:py-32">
-          <div className="mx-auto flex max-w-5xl flex-col items-center text-center" aria-live="polite">
+          <div className={step === 'done' ? 'w-full' : 'mx-auto flex max-w-5xl flex-col items-center text-center'} aria-live="polite">
 
             {/* ---------- STEP 1: the name ---------- */}
             {step === 'name' && (
@@ -237,7 +245,8 @@ export function HoiHome() {
 
             {/* ---------- STEP 3: their page ---------- */}
             {step === 'done' && current && (
-              <div key={`done-${persona}`} className="flex flex-col items-center">
+              <div key={`done-${persona}`} className="hero-split grid w-full items-center gap-14 lg:grid-cols-[1.12fr_0.88fr] lg:gap-16">
+                <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
                 <span className="hero-pill rise" style={rise(0)}>
                   <span className="pill-dot" aria-hidden="true" />
                   {returning ? `Welcome back${firstName ? `, ${firstName}` : ''}` : `For ${current.plural}`}
@@ -245,15 +254,15 @@ export function HoiHome() {
                 <p className="rise mt-8 flex items-center gap-2 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-2xl" style={rise(1)}>
                   Hoi{firstName ? `, ${firstName}` : ''}! <span className="text-accent"><WaveHand /></span>
                 </p>
-                <h1 className="rise mt-5 max-w-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
-                  style={{ ...rise(2), ...fit(current.headline, 'clamp(2.5rem, 7vw, 6.25rem)', '2.75rem') }}>
+                <h1 className="rise mt-5 font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
+                  style={{ ...rise(2), ...fit(current.headline, 'var(--hero-h1)', '2.75rem') }}>
                   {(() => {
                     const [a, b] = splitHeadline(current.headline)
                     return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
                   })()}
                 </h1>
                 <p className="rise mt-7 max-w-xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(3)}>{current.line}</p>
-                <div className="rise mt-11 flex flex-wrap items-center justify-center gap-3 sm:gap-4" style={rise(4)}>
+                <div className="rise mt-11 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:justify-start" style={rise(4)}>
                   <a href="#events" className="btn-primary group h-14 px-7 text-base sm:text-lg">
                     {current.cta}
                     <Arrow />
@@ -262,6 +271,9 @@ export function HoiHome() {
                     I’m someone else
                   </button>
                 </div>
+                </div>
+
+                <HousePhoto src="/photos/hoi-team.jpg" alt="The hoi startup factory team in front of a hoi flag" style={rise(3)} />
               </div>
             )}
           </div>

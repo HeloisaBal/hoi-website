@@ -368,3 +368,66 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   .menu-panel { animation: none; }
   .burger span { transition: none; }
 }
+
+/* ============================================================
+   HERO PHOTO — the team inside the hoi "house" (the logo's "o")
+   ============================================================ */
+.hero-split { --hero-h1: clamp(2.5rem, 7vw, 6.25rem); }
+@media (min-width: 1024px) { .hero-split { --hero-h1: clamp(2.4rem, 4.3vw, 4.6rem); } }
+
+.hero { --tx: 0; --ty: 0; }
+.house {
+  --roof: polygon(0 0, 100% 15%, 100% 100%, 0 100%);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  position: relative; margin: 0 auto;
+  width: min(78%, 340px);
+  perspective: 1100px;
+  animation: houseIn 1s cubic-bezier(.16,1,.3,1) both;
+}
+@media (min-width: 1024px) { .house { width: min(100%, 460px); } }
+@keyframes houseIn { from { opacity: 0; transform: translateY(28px) rotate(-3deg) scale(.94); } to { opacity: 1; transform: none; } }
+
+.house-tilt {
+  position: relative; aspect-ratio: 4 / 5;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--ty) * -6deg)) rotateY(calc(var(--tx) * 8deg));
+  transition: transform .7s var(--ease);
+}
+.house-photo, .house-shadow { position: absolute; inset: 0; clip-path: var(--roof); }
+.house-shadow {
+  background: var(--accent);
+  translate: 22px 22px;
+  transform: translate(calc(var(--tx) * -10px), calc(var(--ty) * -10px));
+  transition: transform .7s var(--ease), background-color .8s ease;
+  animation: extrude .9s .35s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes extrude { from { translate: 0 0; } }
+.house-photo { overflow: hidden; background: var(--color-line); }
+.house-photo img {
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 32%;
+  transform: scale(1.08) translate(calc(var(--tx) * -9px), calc(var(--ty) * -7px));
+  transition: transform .7s var(--ease);
+}
+/* the dot of the logo's "i", sitting in the space above the roof */
+.house-dot {
+  position: absolute; right: 1%; top: -5%; width: 19%; aspect-ratio: 1; border-radius: 50%;
+  background: var(--c2);
+  transform: translate(calc(var(--tx) * 16px), calc(var(--ty) * 16px)) translateZ(40px);
+  transition: transform .7s var(--ease), background-color .8s ease;
+  animation: dotIn .7s .6s cubic-bezier(.2,1.6,.4,1) both;
+}
+@keyframes dotIn { from { opacity: 0; scale: .2; } }
+/* giant faint wordmark behind, like lovedis' "LOVE" */
+.house-word {
+  position: absolute; z-index: -1; left: 50%; top: 50%; translate: -50% -52%;
+  font-family: var(--font-display); font-weight: 900; font-size: 20rem; line-height: 1; letter-spacing: -.05em;
+  color: var(--accent); opacity: .07; pointer-events: none; user-select: none;
+  transition: color .8s ease;
+  display: none;
+}
+@media (min-width: 1024px) { .house-word { display: block; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .house, .house-shadow, .house-dot { animation: none; }
+  .house-tilt, .house-shadow, .house-photo img, .house-dot { transform: none; transition: none; }
+}
