@@ -67,7 +67,8 @@ export function useEffects() {
             ['--x' as string]: `${wipe.x}px`, ['--y' as string]: `${wipe.y}px`,
             background: `linear-gradient(118deg, ${wipe.from}, ${wipe.to})`,
           }}>
-          <span className="wipe-word font-display text-[clamp(4rem,14vw,12rem)] font-black uppercase text-white">
+          <span className="wipe-word font-display font-black uppercase text-white"
+            style={{ fontSize: `min(clamp(4rem, 14vw, 12rem), calc(90vw / ${((wipe.word.length + 1) * 0.8).toFixed(2)}))` }}>
             {wipe.word}.
           </span>
         </div>

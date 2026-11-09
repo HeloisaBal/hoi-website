@@ -104,7 +104,7 @@ export const events: HoiEvent[] = [
     id: 'prototypenparty',
     partner: 'hallig hanken',
     label: 'Ecosystem event',
-    title: 'Prototypenparty Oldenburg',
+    title: 'Prototypen\u00adparty Oldenburg',
     meta: ['12 November 2026 · 16:00', '@ hallig hanken'],
     gradient: 'linear-gradient(150deg, #00d7b8 0%, #003efe 100%)',
     for: ['founder', 'student', 'researcher', 'investor'],

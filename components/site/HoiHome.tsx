@@ -7,6 +7,16 @@ import { HeroBackdrop } from './Backdrop'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
+/**
+ * Font size for a big uppercase heading: the design size (`max`), but never
+ * bigger than what lets its longest word fit the screen. `gutter` is the
+ * horizontal space taken by padding around the heading.
+ */
+function fit(text: string, max: string, gutter: string): React.CSSProperties {
+  const longest = Math.max(4, ...text.split(/\s+/).map((w) => w.length))
+  return { fontSize: `min(${max}, calc((100vw - ${gutter}) / ${(longest * 0.8).toFixed(2)}))` }
+}
+
 /* ------------------------------------------------------------
    Remembering the visitor. Stored only in their own browser.
    ------------------------------------------------------------ */
@@ -33,6 +43,29 @@ function WaveHand() {
   )
 }
 
+/** Animation delay for the staggered fade-up on entry. */
+function rise(i: number): React.CSSProperties {
+  return { animationDelay: `${(0.08 * i).toFixed(2)}s` }
+}
+
+/** Split a headline so its second half can carry the brand gradient. */
+function splitHeadline(text: string): [string, string] {
+  const m = text.match(/^(.+?[.?!])\s+(.+)$/)
+  if (m) return [m[1], m[2]]
+  const words = text.split(' ')
+  if (words.length < 4) return [text, '']
+  return [words.slice(0, -2).join(' '), words.slice(-2).join(' ')]
+}
+
+function Arrow() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-[1.05em] w-[1.05em] transition-transform duration-300 ease-out group-hover:translate-x-1" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 10h12M11 5l5 5-5 5" />
+    </svg>
+  )
+}
+
 export function HoiHome() {
   const [persona, setPersona] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
@@ -40,7 +73,8 @@ export function HoiHome() {
   const [step, setStep] = useState<Step>('name')
   const [returning, setReturning] = useState(false)
   const [motion, setMotion] = useState(false)
-  const heroRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
+  const [scrolled, setScrolled] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { burst, colourWipe, layer } = useEffects()
@@ -54,6 +88,14 @@ export function HoiHome() {
     if (p && personas.some((x) => x.id === p)) { setPersona(p); setReturning(true); setStep('done') }
     else if (n) setStep('persona')
     /* eslint-enable react-hooks/set-state-in-effect */
+  }, [])
+
+  /* header: transparent over the hero, solid once you scroll */
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   /* scroll reveal */
@@ -92,7 +134,7 @@ export function HoiHome() {
       setStep('persona')
       if (clean) {
         const { x, y } = heroCentre()
-        burst(x, y, ['#ffffff', theme.c1, theme.c2, theme.c3, '#2ceccd'], 56)
+        burst(x, y, [theme.c1, theme.c2, theme.c3, theme.accent], 56)
       }
     }
     if (!clean || prefersReducedMotion()) { finish(); return }
@@ -115,7 +157,7 @@ export function HoiHome() {
     window.setTimeout(apply, 480)
     window.setTimeout(() => {
       const c = heroCentre()
-      burst(c.x, c.y, ['#ffffff', p.theme.c1, p.theme.c2, p.theme.c3], 48)
+      burst(c.x, c.y, [p.theme.c1, p.theme.c2, p.theme.c3, p.theme.accent], 48)
     }, 900)
   }
 
@@ -130,13 +172,17 @@ export function HoiHome() {
     save(KEY_PERSONA, null); save(KEY_NAME, null)
   }
 
-  /* glow follows the pointer across the hero */
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+  /* soft spotlight that follows the pointer across the hero */
+  function onPointerMove(e: React.PointerEvent<HTMLElement>) {
     const el = heroRef.current
-    if (!el) return
+    if (!el || e.pointerType === 'touch') return
     const r = el.getBoundingClientRect()
-    el.style.setProperty('--gx', `${((e.clientX - r.left) / r.width) * 100}%`)
-    el.style.setProperty('--gy', `${((e.clientY - r.top) / r.height) * 100}%`)
+    el.style.setProperty('--gx', `${Math.round(e.clientX - r.left)}px`)
+    el.style.setProperty('--gy', `${Math.round(e.clientY - r.top)}px`)
+    el.style.setProperty('--spot', '1')
+  }
+  function onPointerLeave() {
+    heroRef.current?.style.setProperty('--spot', '0')
   }
 
   const sortedEvents = useMemo(() => {
@@ -162,118 +208,113 @@ export function HoiHome() {
     <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars}>
       {layer}
       {/* ================= HEADER ================= */}
-      <header className="sticky top-0 z-50 border-b border-line/70 bg-white/85 backdrop-blur-md">
-        <div className="container-x flex flex-wrap items-center justify-between gap-4 py-3.5">
-          <a href="#top" aria-label="hoi startup factory, to the top">
-            <img src="/logo.png" alt="hoi startup factory" className="h-9 w-auto" />
+      <header className={`site-header sticky top-0 z-50 ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="container-x flex h-16 items-center justify-between gap-3 sm:h-[72px]">
+          <a href="#top" aria-label="hoi startup factory, to the top" className="shrink-0">
+            <img src="/logo.png" alt="hoi startup factory" className="h-8 w-auto sm:h-9" />
           </a>
-          <nav aria-label="Main" className="flex flex-wrap items-center gap-x-7 gap-y-2 text-[15px] font-semibold">
-            <a href="#events" className="hover:text-accent">Events</a>
-            <a href="#programmes" className="hidden hover:text-accent sm:inline">Programmes</a>
-            <a href="#about" className="hidden hover:text-accent sm:inline">About</a>
-            <span className="flex gap-1 rounded-full border border-line p-1 text-xs">
-              <button type="button" className="rounded-full px-2.5 py-1.5 text-muted hover:text-ink">DE</button>
-              <button type="button" aria-pressed="true" className="rounded-full bg-ink px-2.5 py-1.5 text-white">EN</button>
+          <nav aria-label="Main" className="flex items-center gap-2 text-[15px] font-medium sm:gap-1">
+            <a href="#events" className="nav-link hidden sm:inline-flex">Events</a>
+            <a href="#programmes" className="nav-link hidden sm:inline-flex">Programmes</a>
+            <a href="#about" className="nav-link hidden sm:inline-flex">About</a>
+            <span className="mx-1 flex gap-0.5 rounded-full border border-line bg-white/70 p-1 text-xs font-semibold sm:mx-3">
+              <button type="button" className="rounded-full px-2.5 py-1 text-muted transition-colors hover:text-ink">DE</button>
+              <button type="button" aria-pressed="true" className="rounded-full bg-ink px-2.5 py-1 text-white">EN</button>
             </span>
-            <a href="#contact"
-              className="rounded-full bg-accent px-5 py-2.5 text-white transition hover:-translate-y-0.5 hover:brightness-110">
-              Say hoi
-            </a>
+            <a href="#contact" className="btn-primary h-10 px-4 text-sm sm:px-5">Say hoi</a>
           </nav>
         </div>
       </header>
 
       {/* ================= HERO ================= */}
-      <section id="top" className="relative isolate pt-5">
+      <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
+        className="hero relative isolate -mt-16 flex min-h-[100svh] items-center pt-16 sm:-mt-[72px] sm:pt-[72px]">
         <HeroBackdrop />
-        <div className="container-x">
-        <div
-          ref={heroRef}
-          onPointerMove={onPointerMove}
-          className="hero-bg relative flex min-h-[min(720px,88vh)] items-center justify-center overflow-hidden rounded-[2rem] px-5 py-16 text-center text-white sm:px-12"
-        >
-          <div className="hero-glow pointer-events-none absolute inset-0" aria-hidden="true" />
-          <svg className="rings pointer-events-none absolute -right-40 -top-32 h-[560px] w-[560px] opacity-20"
-            viewBox="0 0 520 520" fill="none" stroke="white" strokeWidth="2" aria-hidden="true">
-            <circle cx="260" cy="260" r="250" /><circle cx="260" cy="260" r="185" strokeDasharray="6 14" />
-            <circle cx="260" cy="260" r="120" /><circle cx="260" cy="10" r="9" fill="white" />
-          </svg>
-          <svg className="rings pointer-events-none absolute -bottom-48 -left-40 h-[420px] w-[420px] opacity-15 [animation-direction:reverse]"
-            viewBox="0 0 520 520" fill="none" stroke="white" strokeWidth="2" aria-hidden="true">
-            <circle cx="260" cy="260" r="250" strokeDasharray="4 18" /><circle cx="260" cy="260" r="160" />
-          </svg>
+        <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
 
-          <div className="relative mx-auto w-full max-w-5xl" aria-live="polite">
-            {/* ---------- STEP 1: the name, centre stage ---------- */}
+        <div className="container-x py-20 sm:py-28 lg:py-32">
+          <div className="mx-auto flex max-w-5xl flex-col items-center text-center" aria-live="polite">
+
+            {/* ---------- STEP 1: the name ---------- */}
             {step === 'name' && (
-              <form key="name" onSubmit={submitName} className="step-in flex flex-col items-center">
-                <span className="pill border border-white/50">Im Norden gründen – mit Rückenwind!</span>
-                <h1 className="mt-8 flex items-center justify-center gap-3 text-[clamp(3.2rem,9vw,7.5rem)] font-black uppercase leading-[0.9] tracking-[-0.02em]">
+              <form key="name" onSubmit={submitName} className="flex w-full flex-col items-center">
+                <span className="hero-pill rise" style={rise(0)}>
+                  <span className="pill-dot" aria-hidden="true" />Im Norden gründen – mit Rückenwind!
+                </span>
+                <h1 className="rise mt-8 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
+                  style={{ ...rise(1), fontSize: 'clamp(3.4rem, 10vw, 8.5rem)' }}>
                   Hoi! <WaveHand />
                 </h1>
-                <label htmlFor="hoi-name" className="mt-5 font-display text-2xl font-bold sm:text-4xl">
+                <label htmlFor="hoi-name" className="rise mt-6 font-display text-2xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]" style={rise(2)}>
                   What should we call you?
                 </label>
-                <input
-                  id="hoi-name"
-                  ref={inputRef}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Your first name"
-                  autoComplete="given-name"
-                  maxLength={40}
-                  className="name-input mt-8 w-full max-w-xl border-b-4 border-white/60 bg-transparent pb-3 text-center font-display text-[clamp(2.2rem,6vw,4rem)] font-extrabold outline-none transition focus:border-white"
-                />
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-                  <button type="submit"
-                    className="group inline-flex min-h-14 items-center gap-2 rounded-full bg-white px-8 text-lg font-bold text-accent shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:shadow-2xl">
+                <div className="rise mt-10 w-full max-w-lg" style={rise(3)}>
+                  <input
+                    id="hoi-name"
+                    ref={inputRef}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder="Your first name"
+                    autoComplete="given-name"
+                    maxLength={40}
+                    className="name-field w-full bg-transparent pb-3 text-center font-display text-[clamp(2rem,5.5vw,3.25rem)] font-bold tracking-[-0.02em] text-ink outline-none"
+                  />
+                  <span className="name-line" aria-hidden="true" />
+                </div>
+                <div className="rise mt-10" style={rise(4)}>
+                  <button type="submit" className="btn-primary group h-14 px-8 text-base sm:text-lg">
                     {draft.trim() ? 'Let’s go' : 'Continue'}
-                    <span className="transition group-hover:translate-x-1" aria-hidden="true">→</span>
+                    <Arrow />
                   </button>
                 </div>
-                <p className="mt-5 text-sm text-white/75">Optional. Only saved in your browser, so we can greet you next time.</p>
+                <p className="rise mt-5 text-sm text-muted" style={rise(5)}>Optional. Only saved in your browser, so we can greet you next time.</p>
               </form>
             )}
 
             {/* ---------- loading: setting sail ---------- */}
             {step === 'loading' && (
-              <div key="loading" className="step-in flex flex-col items-center" role="status">
-                <div className="flex gap-3" aria-hidden="true">
-                  <span className="dot h-5 w-5 rounded-full bg-white" />
-                  <span className="dot h-5 w-5 rounded-full bg-white" />
-                  <span className="dot h-5 w-5 rounded-full bg-white" />
+              <div key="loading" className="flex flex-col items-center" role="status">
+                <div className="flex gap-2.5" aria-hidden="true">
+                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
+                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
+                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
                 </div>
-                <p className="mt-8 font-display text-3xl font-extrabold sm:text-4xl">Setting sail, {draft.trim().split(/\s+/)[0]}…</p>
+                <p className="rise mt-8 font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl">
+                  Setting sail, {draft.trim().split(/\s+/)[0]}…
+                </p>
               </div>
             )}
 
             {/* ---------- STEP 2: who are you? ---------- */}
             {step === 'persona' && (
-              <div key="persona" className="step-in flex flex-col items-center">
-                <h1 className="text-[clamp(3rem,8.5vw,7rem)] font-black uppercase leading-[0.92] tracking-[-0.02em]">
+              <div key="persona" className="flex flex-col items-center">
+                <h1 className="font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink"
+                  style={fit(`Hoi, ${firstName}!`, 'clamp(3rem, 9vw, 7.5rem)', '2.75rem')}>
                   {firstName ? (
                     <span aria-label={`Hoi, ${firstName}!`}>
-                      {Array.from(`Hoi, ${firstName}!`).map((ch, i) => (
-                        <span key={i} aria-hidden="true" className="pop" style={{ animationDelay: `${0.04 * i}s` }}>
-                          {ch === ' ' ? ' ' : ch}
+                      {['Hoi,', `${firstName}!`].map((word, w) => (
+                        <span key={w} aria-hidden="true" className={`inline-block whitespace-nowrap ${w > 0 ? 'text-accent' : ''}`}>
+                          {w > 0 && <span className="inline-block w-[0.26em]" />}
+                          {Array.from(word).map((ch, i) => (
+                            <span key={i} className="pop" style={{ animationDelay: `${0.035 * (i + w * 5)}s` }}>{ch}</span>
+                          ))}
                         </span>
                       ))}
                     </span>
-                  ) : 'Hoi!'}
+                  ) : <span className="rise inline-block">Hoi!</span>}
                 </h1>
-                <p id="who" className="mt-6 font-display text-2xl font-bold sm:text-4xl">
+                <p id="who" className="rise mt-6 text-xl font-medium text-muted sm:text-2xl" style={rise(3)}>
                   {firstName ? 'Nice to meet you. So, you’re…' : 'Tell us who you are. You’re…'}
                 </p>
-                <div role="group" aria-labelledby="who" className="mt-9 flex max-w-4xl flex-wrap justify-center gap-3">
+                <div role="group" aria-labelledby="who" className="mt-10 flex max-w-3xl flex-wrap justify-center gap-2.5 sm:gap-3">
                   {personas.map((p, i) => (
                     <button key={p.id} type="button" onClick={(e) => pick(p.id, e)}
-                      className="step-in min-h-14 rounded-full border-2 border-white/55 bg-white/10 px-6 text-lg font-semibold backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:scale-105 hover:border-white hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                      style={{ animationDelay: `${0.35 + i * 0.07}s` }}>
+                      className="chip rise" style={rise(4 + i * 0.6)}>
                       {p.chip}
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={editName} className="mt-8 text-sm text-white/75 underline underline-offset-4 hover:text-white">
+                <button type="button" onClick={editName} className="rise mt-10 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent" style={rise(8)}>
                   {firstName ? `Not ${firstName}? Change your name` : 'Add your name'}
                 </button>
               </div>
@@ -281,27 +322,28 @@ export function HoiHome() {
 
             {/* ---------- STEP 3: their page ---------- */}
             {step === 'done' && current && (
-              <div key={`done-${persona}`} className="step-in flex flex-col items-center">
-                {returning ? (
-                  <span className="pill border border-white/50">Welcome back{firstName ? `, ${firstName}` : ''}</span>
-                ) : (
-                  <span className="pill border border-white/50">For {current.plural}</span>
-                )}
-                <p className="mt-7 flex items-center gap-2 font-display text-2xl font-extrabold sm:text-3xl">
-                  Hoi{firstName ? `, ${firstName}` : ''}! <WaveHand />
+              <div key={`done-${persona}`} className="flex flex-col items-center">
+                <span className="hero-pill rise" style={rise(0)}>
+                  <span className="pill-dot" aria-hidden="true" />
+                  {returning ? `Welcome back${firstName ? `, ${firstName}` : ''}` : `For ${current.plural}`}
+                </span>
+                <p className="rise mt-8 flex items-center gap-2 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-2xl" style={rise(1)}>
+                  Hoi{firstName ? `, ${firstName}` : ''}! <span className="text-accent"><WaveHand /></span>
                 </p>
-                <h1 className="mt-4 max-w-5xl text-[clamp(2.6rem,6.6vw,5.8rem)] font-black uppercase leading-[0.95] tracking-[-0.02em] text-balance">
-                  {current.headline}
+                <h1 className="rise mt-5 max-w-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
+                  style={{ ...rise(2), ...fit(current.headline, 'clamp(2.5rem, 7vw, 6.25rem)', '2.75rem') }}>
+                  {(() => {
+                    const [a, b] = splitHeadline(current.headline)
+                    return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
+                  })()}
                 </h1>
-                <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/90 sm:text-xl">{current.line}</p>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                  <a href="#events"
-                    className="group inline-flex min-h-14 items-center gap-2 rounded-full bg-white px-8 text-lg font-bold text-accent shadow-xl shadow-black/15 transition hover:-translate-y-0.5">
+                <p className="rise mt-7 max-w-xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(3)}>{current.line}</p>
+                <div className="rise mt-11 flex flex-wrap items-center justify-center gap-3 sm:gap-4" style={rise(4)}>
+                  <a href="#events" className="btn-primary group h-14 px-7 text-base sm:text-lg">
                     {current.cta}
-                    <span className="transition group-hover:translate-x-1" aria-hidden="true">→</span>
+                    <Arrow />
                   </a>
-                  <button type="button" onClick={() => setStep('persona')}
-                    className="inline-flex min-h-14 items-center rounded-full border-2 border-white/60 px-7 font-semibold transition hover:bg-white/15">
+                  <button type="button" onClick={() => setStep('persona')} className="btn-secondary h-14 px-7 text-base">
                     I’m someone else
                   </button>
                 </div>
@@ -309,36 +351,37 @@ export function HoiHome() {
             )}
           </div>
         </div>
-        </div>
       </section>
 
       {/* ================= EVENTS ================= */}
-      <section id="events" className="container-x pt-28">
+      <section id="events" className="container-x pt-6 sm:pt-10">
         <div className="reveal mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow">What’s on</p>
-            <h2 key={persona ?? 'all'} className="swap-in mt-2 text-4xl font-black uppercase leading-none sm:text-6xl">
+            <h2 key={persona ?? 'all'} className="swap-in mt-2 font-black uppercase leading-none"
+              style={fit(current ? `Next up for ${current.plural}` : 'Next up at hoi', 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>
               {current ? `Next up for ${current.plural}` : 'Next up at hoi'}
             </h2>
           </div>
           <a href="#events" className="font-semibold text-accent hover:underline">See all events →</a>
+          <p className="w-full text-sm text-muted sm:hidden" aria-hidden="true">Swipe to see more →</p>
         </div>
 
-        <div className="reveal grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="reveal no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-5 px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
           {sortedEvents.map((ev) => {
             const match = persona ? ev.for.includes(persona) : true
             return (
               <article key={ev.id}
-                className={`lift relative flex min-h-[380px] flex-col rounded-[1.4rem] p-6 text-white ${match ? '' : 'opacity-55 saturate-50'}`}
+                className={`lift relative flex min-h-[320px] w-[80%] shrink-0 snap-start flex-col rounded-[1.4rem] p-6 text-white sm:min-h-[380px] sm:w-auto ${match ? '' : 'opacity-55 saturate-50'}`}
                 style={{ background: ev.gradient }}>
                 <div className="flex items-start justify-between gap-3">
                   <span className="rounded-md border-[1.5px] border-white/80 px-2.5 py-1 text-sm font-bold">{ev.partner}</span>
                   {persona && match && (
-                    <span className="swap-in rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">Picked for you</span>
+                    <span className="swap-in shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">Picked for you</span>
                   )}
                 </div>
                 <span className="pill mt-auto self-start">{ev.label}</span>
-                <h3 lang="de" className="mt-3 text-[clamp(1.45rem,2.1vw,1.85rem)] font-extrabold uppercase leading-none hyphens-auto">{ev.title}</h3>
+                <h3 lang="de" className="mt-3 text-[clamp(1.45rem,2.1vw,1.85rem)] font-extrabold uppercase leading-none hyphens-manual">{ev.title}</h3>
                 <p className="mt-5 text-sm leading-relaxed text-white/90">
                   {ev.meta.map((m) => <span key={m} className="block">{m}</span>)}
                 </p>
@@ -352,7 +395,7 @@ export function HoiHome() {
       <section id="programmes" className="container-x pt-28">
         <div className="reveal">
           <p className="eyebrow">What we do</p>
-          <h2 className="mt-2 max-w-3xl text-4xl font-black uppercase leading-none sm:text-6xl">From lab idea to company</h2>
+          <h2 className="mt-2 max-w-3xl font-black uppercase leading-none" style={fit('From lab idea to company', 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>From lab idea to company</h2>
         </div>
         <div className="reveal mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {sortedProgrammes.map((p) => {
@@ -416,7 +459,8 @@ export function HoiHome() {
       <section id="contact" className="container-x pt-28">
         <div className="reveal grid items-center gap-10 rounded-[2rem] p-8 text-white sm:p-14 lg:grid-cols-2" style={{ background: 'linear-gradient(135deg, #170a2b 35%, var(--c3))' }}>
           <div>
-            <h2 key={`c-${firstName}`} className="swap-in text-4xl font-black uppercase leading-none sm:text-6xl">
+            <h2 key={`c-${firstName}`} className="swap-in font-black uppercase leading-none"
+              style={fit(firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.', 'clamp(2.1rem, 5vw, 3.75rem)', '7rem')}>
               {firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.'}
             </h2>
             <p className="mt-5 max-w-md text-lg leading-relaxed text-white/80">
