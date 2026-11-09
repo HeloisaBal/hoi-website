@@ -39,7 +39,7 @@ export type Persona = {
 export const personas: Persona[] = [
   {
     id: 'researcher',
-    theme: { c1: '#2ceccd', c2: '#00ad96', c3: '#003efe', accent: '#00796a', tint: '#ecfcf9' },
+    theme: { c1: '#2ceccd', c2: '#06b6d4', c3: '#003efe', accent: '#0e7490', tint: '#ecfbfd' },
     word: 'Research',
     chip: 'a researcher with an idea',
     headline: 'Your research could be a company.',
@@ -79,7 +79,7 @@ export const personas: Persona[] = [
   },
   {
     id: 'investor',
-    theme: { c1: '#00d7b8', c2: '#61019e', c3: '#22003d', accent: '#61019e', tint: '#f5effb' },
+    theme: { c1: '#34d399', c2: '#059669', c3: '#064e3b', accent: '#047857', tint: '#eefcf5' },
     word: 'Invest',
     chip: 'an investor',
     headline: 'Science-based startups from the Northwest.',
