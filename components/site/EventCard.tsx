@@ -21,7 +21,7 @@ export function EventCard({ ev, match = true, picked = false, row = false, showA
     ? 'min-h-[320px] w-[80%] shrink-0 snap-start sm:min-h-[380px] sm:w-auto'
     : 'min-h-[360px] sm:min-h-[400px]'
   return (
-    <article
+    <article data-spotlight="light" data-tilt
       className={`lift relative flex flex-col rounded-[1.4rem] p-6 text-white ${size} ${match ? '' : 'opacity-55 saturate-50'}`}
       style={{ background: ev.gradient, ...style }}>
       <div className="flex items-start justify-between gap-3">

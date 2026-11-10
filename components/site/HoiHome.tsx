@@ -10,6 +10,7 @@ import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHea
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { EventCard } from './EventCard'
+import { PointerEffects } from './PointerEffects'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
@@ -147,6 +148,7 @@ export function HoiHome() {
   return (
     <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars(theme)}>
       {layer}
+      <PointerEffects />
       <Header active="home" />
 
       {/* ================= HERO ================= */}
@@ -312,8 +314,8 @@ export function HoiHome() {
           {sortedProgrammes.map((p) => {
             const match = persona ? p.for.includes(persona) : false
             return (
-              <a key={p.id} href="#contact"
-                className={`lift group block rounded-[1.4rem] border-2 p-7 ${match ? 'border-accent bg-white shadow-xl shadow-black/5' : 'border-line bg-white/60'}`}>
+              <a key={p.id} href="#contact" data-spotlight="accent" data-tilt
+                className={`lift group relative block rounded-[1.4rem] border-2 p-7 ${match ? 'border-accent bg-white shadow-xl shadow-black/5' : 'border-line bg-white/60'}`}>
                 <div className="flex items-center justify-between">
                   <span className="block h-2 w-12 rounded-full" style={{ background: p.color }} />
                   {match && <span className="swap-in text-xs font-bold uppercase tracking-wider text-accent">For you</span>}
@@ -379,7 +381,7 @@ export function HoiHome() {
                 ? `Tell us about yourself. We talk to ${current.plural} every week and love hearing new ideas.`
                 : 'Got an idea, a question or a startup? We’d love to hear from you.'}
             </p>
-            <a href={`mailto:team@hoi-startup-factory.de?subject=${mailSubject}`}
+            <a href={`mailto:team@hoi-startup-factory.de?subject=${mailSubject}`} data-magnetic
               className="mt-8 inline-flex min-h-12 items-center rounded-full bg-accent px-7 font-semibold transition hover:-translate-y-0.5 hover:brightness-110">
               Get in touch
             </a>

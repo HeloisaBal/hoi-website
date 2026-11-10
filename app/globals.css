@@ -431,3 +431,80 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   .house, .house-shadow, .house-dot { animation: none; }
   .house-tilt, .house-shadow, .house-photo img, .house-dot { transform: none; transition: none; }
 }
+
+/* ============================================================
+   POINTER EFFECTS (driven by components/site/PointerEffects.tsx
+   and useSlidingIndicator.ts)
+   ============================================================ */
+
+/* ---- 1 magnetic: the engine sets `translate`; extend the existing transitions ---- */
+.btn-primary {
+  transition: translate .45s cubic-bezier(.2,.8,.2,1), scale .2s ease, transform .3s cubic-bezier(.2,.8,.2,1),
+    box-shadow .3s ease, filter .3s ease, background-color .6s ease;
+}
+.btn-secondary {
+  transition: translate .45s cubic-bezier(.2,.8,.2,1), scale .2s ease, transform .3s cubic-bezier(.2,.8,.2,1),
+    border-color .25s ease, color .25s ease, box-shadow .3s ease;
+}
+.chip {
+  transition: translate .45s cubic-bezier(.2,.8,.2,1), scale .2s ease, transform .3s cubic-bezier(.2,.8,.2,1),
+    border-color .25s ease, color .25s ease, box-shadow .3s ease, background-color .25s ease;
+}
+[data-magnetic] { transition: translate .45s cubic-bezier(.2,.8,.2,1), scale .2s ease, transform .3s ease, filter .3s ease; }
+/* phones: a small press bounce instead */
+@media (pointer: coarse) {
+  .btn-primary:active, .btn-secondary:active, .chip:active, [data-magnetic]:active { scale: .96; }
+}
+
+/* ---- 2 spotlight: light under the content, glow on the edge ---- */
+[data-spotlight] { isolation: isolate; }
+[data-spotlight="light"]  { --spot: rgb(255 255 255 / .32); --spot-edge: rgb(255 255 255 / .95); --edge: 0px; }
+[data-spotlight="accent"] { --spot: color-mix(in srgb, var(--accent) 15%, transparent); --spot-edge: var(--accent); --edge: 2px; }
+[data-spotlight]::before,
+[data-spotlight]::after {
+  content: ''; position: absolute; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity .35s ease;
+}
+[data-spotlight]::before {
+  inset: 0; z-index: -1;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), var(--spot), transparent 65%);
+}
+[data-spotlight]::after {
+  inset: calc(var(--edge) * -1); z-index: 1; padding: 1.5px;
+  background: radial-gradient(180px circle at var(--mx, 50%) var(--my, 50%), var(--spot-edge), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+[data-spotlight]:hover::before,
+[data-spotlight]:hover::after { opacity: 1; }
+
+/* ---- 3 tilt: the engine sets --rx / --ry; keeps the existing hover lift ---- */
+[data-tilt] {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .35s, opacity .35s;
+}
+[data-tilt].lift:hover {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-6px);
+}
+
+/* ---- 4 sliding highlight ---- */
+.nav-links .nav-link:hover,
+.nav-links .nav-link.is-active { background: transparent; }
+.nav-indicator,
+.menu-indicator {
+  position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0;
+  transition: left .4s cubic-bezier(.2,.8,.2,1), top .4s cubic-bezier(.2,.8,.2,1), width .4s cubic-bezier(.2,.8,.2,1),
+    height .4s cubic-bezier(.2,.8,.2,1), opacity .25s ease, background-color .6s ease;
+}
+.nav-indicator { border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.menu-indicator { z-index: -1; border-radius: 14px; background: color-mix(in srgb, var(--accent) 11%, transparent); }
+
+/* ---- 6 trail: one fixed canvas, above the page and below the cursor ---- */
+.cursor-trail { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 99; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tilt], [data-tilt].lift:hover { transform: none; }
+  .cursor-trail { display: none; }
+  .nav-indicator, .menu-indicator { transition: opacity .2s ease; }
+}

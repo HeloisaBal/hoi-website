@@ -6,6 +6,7 @@ import { HeroBackdrop } from './Backdrop'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { EventCard } from './EventCard'
+import { PointerEffects } from './PointerEffects'
 import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, themeVars } from './shared'
 
 type ForFilter = PersonaId | 'all'
@@ -51,6 +52,7 @@ export function EventsPage() {
 
   return (
     <div className="themed" style={themeVars(theme)}>
+      <PointerEffects />
       <Header active="events" />
 
       {/* ================= PAGE HERO ================= */}
@@ -137,7 +139,7 @@ export function EventsPage() {
             <a href="https://www.instagram.com/hoi_startup_factory/" className="btn-primary group h-14 px-7">
               Follow on Instagram <Arrow />
             </a>
-            <a href="mailto:team@hoi-startup-factory.de?subject=Hosting%20an%20event%20with%20hoi"
+            <a href="mailto:team@hoi-startup-factory.de?subject=Hosting%20an%20event%20with%20hoi" data-magnetic
               className="inline-flex h-14 items-center rounded-full border border-white/30 px-7 font-semibold transition hover:-translate-y-0.5 hover:bg-white/10">
               Host an event
             </a>

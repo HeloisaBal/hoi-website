@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Arrow } from './shared'
+import { useSlidingIndicator } from './useSlidingIndicator'
 
 const links = [
   { href: '/events', label: 'Events', key: 'events' },
@@ -20,11 +21,32 @@ function LangSwitch({ className = '' }: { className?: string }) {
   )
 }
 
+/* Links in the full-screen phone menu, with the sliding highlight (effect 4).
+   Its own component so the highlight attaches when the menu opens. */
+function MobileLinks({ active, onNavigate }: { active?: string; onNavigate: () => void }) {
+  const listRef = useSlidingIndicator<HTMLUListElement>('.menu-link')
+  return (
+    <ul ref={listRef} className="relative isolate flex flex-col">
+      <span data-indicator aria-hidden="true" className="menu-indicator" />
+      {links.map((l, i) => (
+        <li key={l.key} className="rise border-b border-line" style={{ animationDelay: `${0.05 + i * 0.06}s` }}>
+          <Link href={l.href} onClick={onNavigate} aria-current={active === l.key ? 'page' : undefined}
+            className={`menu-link group flex items-center justify-between px-3 py-5 font-display text-[2.1rem] font-black uppercase leading-none tracking-[-0.03em] transition-colors hover:text-accent ${active === l.key ? 'text-accent' : 'text-ink'}`}>
+            {l.label}
+            <span className="text-2xl text-muted transition group-hover:translate-x-1 group-hover:text-accent"><Arrow /></span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /* Site header: transparent over the hero, frosted once the page scrolls.
    On phones the links move into a full-screen menu behind a menu button. */
 export function Header({ active }: { active?: 'home' | 'events' }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const navRef = useSlidingIndicator<HTMLDivElement>('.nav-link')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -61,10 +83,13 @@ export function Header({ active }: { active?: 'home' | 'events' }) {
         </Link>
 
         <nav aria-label="Main" className="flex items-center gap-2 text-[15px] font-medium sm:gap-1">
-          {links.slice(0, 3).map((l) => (
-            <Link key={l.key} href={l.href} aria-current={active === l.key ? 'page' : undefined}
-              className={`nav-link hidden sm:inline-flex ${active === l.key ? 'is-active' : ''}`}>{l.label}</Link>
-          ))}
+          <div ref={navRef} className="nav-links relative hidden items-center sm:flex">
+            <span data-indicator aria-hidden="true" className="nav-indicator" />
+            {links.slice(0, 3).map((l) => (
+              <Link key={l.key} href={l.href} aria-current={active === l.key ? 'page' : undefined}
+                className={`nav-link relative ${active === l.key ? 'is-active' : ''}`}>{l.label}</Link>
+            ))}
+          </div>
           <LangSwitch className="mx-3 hidden sm:flex" />
           <Link href="/#contact" className="btn-primary h-10 px-4 text-sm sm:px-5" onClick={close}>Say hoi</Link>
 
@@ -80,17 +105,7 @@ export function Header({ active }: { active?: 'home' | 'events' }) {
       {open && (
         <div id="mobile-menu" className="menu-panel sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <nav aria-label="Mobile" className="container-x flex flex-1 flex-col pt-6">
-            <ul className="flex flex-col">
-              {links.map((l, i) => (
-                <li key={l.key} className="rise border-b border-line" style={{ animationDelay: `${0.05 + i * 0.06}s` }}>
-                  <Link href={l.href} onClick={close} aria-current={active === l.key ? 'page' : undefined}
-                    className={`group flex items-center justify-between py-5 font-display text-[2.1rem] font-black uppercase leading-none tracking-[-0.03em] transition-colors hover:text-accent ${active === l.key ? 'text-accent' : 'text-ink'}`}>
-                    {l.label}
-                    <span className="text-2xl text-muted transition group-hover:translate-x-1 group-hover:text-accent"><Arrow /></span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <MobileLinks active={active} onNavigate={close} />
 
             <div className="rise mt-auto flex items-center justify-between gap-4 pb-8 pt-10" style={{ animationDelay: '0.32s' }}>
               <LangSwitch />
