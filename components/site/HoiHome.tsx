@@ -1,16 +1,19 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_THEME, events, partners, personas, programmes, type PersonaId } from './data'
+import { DEFAULT_THEME, events, partners, personas, type PersonaId } from './data'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
 import { HousePhoto } from './HousePhoto'
 import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, themeVars } from './shared'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { EventCard } from './EventCard'
 import { PointerEffects } from './PointerEffects'
+import { ScrollBoat } from './ScrollBoat'
+import { LogoWindow } from './LogoWindow'
+import { FounderJourney } from './FounderJourney'
+import { EventStack } from './EventStack'
+import { ParallaxShapes } from './ParallaxShapes'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
@@ -136,11 +139,6 @@ export function HoiHome() {
     return [...events].sort((a, b) => Number(b.for.includes(persona)) - Number(a.for.includes(persona)))
   }, [persona])
 
-  const sortedProgrammes = useMemo(() => {
-    if (!persona) return programmes
-    return [...programmes].sort((a, b) => Number(b.for.includes(persona)) - Number(a.for.includes(persona)))
-  }, [persona])
-
   const mailSubject = encodeURIComponent(
     `Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`,
   )
@@ -149,12 +147,17 @@ export function HoiHome() {
     <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars(theme)}>
       {layer}
       <PointerEffects />
+      <ScrollBoat />
       <Header active="home" />
+
+      {/* ================= S4: fly through the logo window, first thing on landing ================= */}
+      <LogoWindow intro />
 
       {/* ================= HERO ================= */}
       <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
-        className="hero relative isolate -mt-16 flex min-h-[100svh] items-center pt-16 sm:-mt-[72px] sm:pt-[72px]">
+        className="hero relative isolate flex min-h-[100svh] items-center">
         <HeroBackdrop />
+        <ParallaxShapes />
         <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
 
         <div className="container-x py-20 sm:py-28 lg:py-32">
@@ -273,6 +276,13 @@ export function HoiHome() {
                     I’m someone else
                   </button>
                 </div>
+                {returning && (
+                  <button type="button" onClick={forget}
+                    className="rise mt-6 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
+                    style={rise(5)}>
+                    {firstName ? `Not ${firstName}? Start over` : 'Start over'}
+                  </button>
+                )}
                 </div>
 
                 <HousePhoto src="/photos/hoi-team.jpg" alt="The hoi startup factory team in front of a hoi flag" style={rise(3)} />
@@ -282,52 +292,11 @@ export function HoiHome() {
         </div>
       </section>
 
-      {/* ================= EVENTS ================= */}
-      <section id="events" className="container-x pt-6 sm:pt-10">
-        <div className="reveal mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="eyebrow">What’s on</p>
-            <h2 key={persona ?? 'all'} className="swap-in mt-2 font-black uppercase leading-none"
-              style={fit(current ? `Next up for ${current.plural}` : 'Next up at hoi', 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>
-              {current ? `Next up for ${current.plural}` : 'Next up at hoi'}
-            </h2>
-          </div>
-          <Link href="/events" className="group inline-flex items-center gap-1.5 font-semibold text-accent">See all events <Arrow /></Link>
-          <p className="w-full text-sm text-muted sm:hidden" aria-hidden="true">Swipe to see more →</p>
-        </div>
+      {/* ================= EVENTS: pinned card stack ================= */}
+      <EventStack events={sortedEvents} persona={persona} plural={current?.plural} />
 
-        <div className="reveal no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-5 px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
-          {sortedEvents.map((ev) => {
-            const match = persona ? ev.for.includes(persona) : true
-            return <EventCard key={ev.id} ev={ev} match={match} picked={!!persona} row />
-          })}
-        </div>
-      </section>
-
-      {/* ================= PROGRAMMES ================= */}
-      <section id="programmes" className="container-x pt-28">
-        <div className="reveal">
-          <p className="eyebrow">What we do</p>
-          <h2 className="mt-2 max-w-3xl font-black uppercase leading-none" style={fit('From lab idea to company', 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>From lab idea to company</h2>
-        </div>
-        <div className="reveal mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {sortedProgrammes.map((p) => {
-            const match = persona ? p.for.includes(persona) : false
-            return (
-              <a key={p.id} href="#contact" data-spotlight="accent" data-tilt
-                className={`lift group relative block rounded-[1.4rem] border-2 p-7 ${match ? 'border-accent bg-white shadow-xl shadow-black/5' : 'border-line bg-white/60'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="block h-2 w-12 rounded-full" style={{ background: p.color }} />
-                  {match && <span className="swap-in text-xs font-bold uppercase tracking-wider text-accent">For you</span>}
-                </div>
-                <h3 className="mt-6 text-2xl font-extrabold leading-tight">{p.title}</h3>
-                <p className="mt-3 leading-relaxed text-muted">{p.text}</p>
-                <span className="mt-6 inline-block font-semibold text-accent transition group-hover:translate-x-1">Learn more →</span>
-              </a>
-            )
-          })}
-        </div>
-      </section>
+      {/* ================= S1: the founder journey ================= */}
+      <FounderJourney persona={persona} />
 
       {/* ================= PEOPLE ================= */}
       <section id="about" className="container-x pt-28">

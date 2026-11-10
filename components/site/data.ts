@@ -19,7 +19,7 @@ export type Theme = {
 }
 
 export const DEFAULT_THEME: Theme = {
-  c1: '#00d7b8', c2: '#003efe', c3: '#9a00ff', accent: '#8a00e6', tint: '#ffffff',
+  c1: '#00d7b8', c2: '#003efe', c3: '#9a00ff', accent: '#8a00e6', tint: '#f8f0ff', // soft hoi purple before a persona is picked
 }
 
 export type Persona = {
@@ -138,42 +138,51 @@ export const events: HoiEvent[] = [
   },
 ]
 
-export type Programme = {
+/** One stage of the founder journey (homepage). Each stage names the hoi
+ *  offer for it; `for` decides where a persona sees "You are here". */
+export type JourneyStage = {
   id: string
   title: string
   text: string
-  color: string
+  programme: string
   for: PersonaId[]
 }
 
-export const programmes: Programme[] = [
+export const journey: JourneyStage[] = [
   {
-    id: 'funnel',
-    title: 'Science Start-up Funnel',
+    id: 'idea',
+    title: 'Idea',
+    text: 'Curious about founding? Learn the basics and meet people who have done it.',
+    programme: 'Microdegrees & events',
+    for: ['student'],
+  },
+  {
+    id: 'lab',
+    title: 'Lab',
     text: 'From a research result to a first business idea, with people who have done it before.',
-    color: '#00d7b8',
-    for: ['researcher', 'student'],
+    programme: 'Science Start-up Funnel',
+    for: ['researcher'],
   },
   {
-    id: 'venture-studio',
-    title: 'Venture Studio',
+    id: 'team',
+    title: 'Team',
     text: 'Hands-on support to build the company: team, product and the first customers.',
-    color: '#003efe',
-    for: ['founder', 'researcher'],
+    programme: 'Venture Studio',
+    for: ['founder'],
   },
   {
-    id: 'corporate',
-    title: 'Corporate Cooperations',
-    text: 'Regional companies and startups working together on real challenges.',
-    color: '#9a00ff',
-    for: ['company'],
-  },
-  {
-    id: 'capital',
-    title: 'Kapital & Netzwerk',
+    id: 'funding',
+    title: 'Funding',
     text: 'Access to funding, investors and the people who open doors in the Northwest.',
-    color: '#00ad96',
-    for: ['investor', 'founder'],
+    programme: 'Kapital & Netzwerk',
+    for: ['investor'],
+  },
+  {
+    id: 'company',
+    title: 'Company',
+    text: 'Regional companies and startups working together on real challenges.',
+    programme: 'Corporate Cooperations',
+    for: ['company'],
   },
 ]
 

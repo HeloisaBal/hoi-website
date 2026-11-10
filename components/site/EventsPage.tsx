@@ -7,6 +7,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { EventCard } from './EventCard'
 import { PointerEffects } from './PointerEffects'
+import { ScrollBoat } from './ScrollBoat'
 import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, themeVars } from './shared'
 
 type ForFilter = PersonaId | 'all'
@@ -53,6 +54,7 @@ export function EventsPage() {
   return (
     <div className="themed" style={themeVars(theme)}>
       <PointerEffects />
+      <ScrollBoat />
       <Header active="events" />
 
       {/* ================= PAGE HERO ================= */}
