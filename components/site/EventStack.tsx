@@ -18,7 +18,8 @@ import { clamp, motionAllowed, sectionProgress, useScrollFrame } from './useScro
 
 const ROT_FROM = [0, 14, -12, 10, -8, 12]
 const ROT_REST = [0, -3, 2.5, -1.5, 2, -2]
-const CARDS_SHARE = 0.78 // first 78% of the scroll: cards; the rest: waves
+const CARDS_SHARE = 0.7 // first 70% of the scroll: cards
+const WAVES_END = 0.86 // waves are up by 86%; then the next section slides over
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -48,7 +49,7 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
     if (!section || !pin || !motionAllowed()) return
     const progress = sectionProgress(section)
     const cardsP = clamp(progress / CARDS_SHARE, 0, 1)
-    const waveP = clamp((progress - CARDS_SHARE) / (1 - CARDS_SHARE), 0, 1)
+    const waveP = clamp((progress - CARDS_SHARE) / (WAVES_END - CARDS_SHARE), 0, 1)
     const seg = cardsP * (n - 1)
     const arrived = events.map((_, i) => (i === 0 ? 1 : clamp((seg - (i - 1)) * 1.3, 0, 1)))
 
@@ -115,11 +116,6 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
             </svg>
           </div>
         ))}
-      </div>
-      <div className="event-stack-tail" aria-hidden="true">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,0 L100,0 L100,55 C82,95 64,100 48,72 S18,30 0,60 Z" />
-        </svg>
       </div>
     </section>
   )
