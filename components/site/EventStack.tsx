@@ -20,6 +20,15 @@ const ROT_FROM = [0, 14, -12, 10, -8, 12]
 const ROT_REST = [0, -3, 2.5, -1.5, 2, -2]
 const CARDS_SHARE = 0.7 // first 70% of the scroll: cards
 const WAVES_END = 0.86 // waves are up by 86%; then the next section slides over
+// Where each wave's top edge stops, as % of the wave's own height (130% of the
+// screen): four equal stripes, at 0%, 25%, 50% and 75% of the screen.
+const WAVE_STOP = [-6, 19.2, 38.5, 57.7]
+const WAVES = [
+  'M0,10 C20,0 35,0 50,8 S80,18 100,6 L100,100 L0,100 Z',
+  'M0,6 C20,16 40,16 55,8 S85,0 100,10 L100,100 L0,100 Z',
+  'M0,10 C25,0 45,2 60,9 S85,16 100,6 L100,100 L0,100 Z',
+  'M0,7 C18,15 38,15 52,7 S84,0 100,9 L100,100 L0,100 Z',
+]
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -72,8 +81,8 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
 
     bandRefs.current.forEach((band, k) => {
       if (!band) return
-      const t = easeOut(clamp((waveP - k * 0.18) / 0.64, 0, 1))
-      band.style.transform = `translateY(${lerp(110, -15, t).toFixed(2)}%)`
+      const t = easeOut(clamp((waveP - k * 0.14) / 0.58, 0, 1))
+      band.style.transform = `translateY(${lerp(110, WAVE_STOP[k], t).toFixed(2)}%)`
     })
   })
 
@@ -105,15 +114,9 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
 
         <span ref={counterRef} className="event-stack-counter" aria-hidden="true">01 / {String(n).padStart(2, '0')}</span>
 
-        {['band-1', 'band-2', 'band-3'].map((cls, k) => (
-          <div key={cls} ref={(el) => { bandRefs.current[k] = el }} className={`event-stack-band ${cls}`} style={{ zIndex: 20 + k }} aria-hidden="true">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path fill="currentColor" d={[
-                'M0,10 C20,0 35,0 50,8 S80,18 100,6 L100,100 L0,100 Z',
-                'M0,6 C20,16 40,16 55,8 S85,0 100,10 L100,100 L0,100 Z',
-                'M0,10 C25,0 45,2 60,9 S85,16 100,6 L100,100 L0,100 Z',
-              ][k]} />
-            </svg>
+        {WAVES.map((d, k) => (
+          <div key={k} ref={(el) => { bandRefs.current[k] = el }} className={`event-stack-band band-${k + 1}`} style={{ zIndex: 20 + k }} aria-hidden="true">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none"><path fill="currentColor" d={d} /></svg>
           </div>
         ))}
       </div>

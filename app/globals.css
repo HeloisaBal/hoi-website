@@ -634,6 +634,7 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 .band-1 { color: var(--c1); }
 .band-2 { color: var(--c2); }
 .band-3 { color: var(--c3); }
+.band-4 { color: var(--accent); }
 /* the next section slides up over the coloured stack, with a wavy top edge,
    so the full-colour screen only shows briefly */
 @media (prefers-reduced-motion: no-preference) {
