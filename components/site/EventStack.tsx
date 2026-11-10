@@ -116,6 +116,11 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
           </div>
         ))}
       </div>
+      <div className="event-stack-tail" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,0 L100,0 L100,55 C82,95 64,100 48,72 S18,30 0,60 Z" />
+        </svg>
+      </div>
     </section>
   )
 }
