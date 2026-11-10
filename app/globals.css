@@ -624,6 +624,12 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
   transform-origin: 50% 100%; will-change: transform;
 }
 .event-stack-card > article { box-shadow: 0 30px 60px -22px rgb(23 10 43 / .45); }
+/* phones: smaller cards so the sliding text behind them stays readable */
+@media (max-width: 639px) {
+  .event-stack-card { width: min(250px, 64vw); height: min(330px, 44svh); }
+  .event-stack-card > article { min-height: 0; padding: 1.25rem; }
+  .event-stack-card h3 { font-size: 1.3rem; }
+}
 .event-stack-counter {
   position: absolute; z-index: 10; left: max(var(--gut), calc((100vw - 80rem) / 2 + var(--gut))); bottom: 1.5rem;
   font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; letter-spacing: -.02em; color: var(--color-ink);
