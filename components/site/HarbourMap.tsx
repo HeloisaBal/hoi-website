@@ -160,7 +160,7 @@ export function HarbourMap() {
   const shown = city ? byCity(city) : []
 
   return (
-    <section className="container-x pt-28" aria-labelledby="map-title">
+    <section className="container-x pb-20 pt-28 sm:pb-28" aria-labelledby="map-title">
       <p className="eyebrow">{home.mapEyebrow}</p>
       <h2 id="map-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{TITLE}</h2>
       <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">{home.mapText}</p>

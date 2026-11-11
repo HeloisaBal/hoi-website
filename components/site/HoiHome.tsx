@@ -300,13 +300,14 @@ export function HoiHome() {
         </div>
       </section>
 
+      {/* ================= S6: the 3D harbour map ================= */}
+      <HarbourMap />
+
       {/* ================= EVENTS: pinned card stack ================= */}
       <EventStack events={sortedEvents} persona={persona} plural={current?.plural} />
 
       {/* ================= S1: the founder journey ================= */}
       <FounderJourney persona={persona} />
-
-      <HarbourMap />
 
       <ScienceBusiness />
 
