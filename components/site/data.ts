@@ -194,3 +194,28 @@ export const partners = [
   'Hochschule Bremen',
   'Constructor University',
 ]
+
+/** The announcement bar at the top of every page. In Sanity: the
+ *  "Highlight" document type (sanity/schemaTypes/highlight.ts). */
+export type Highlight = {
+  id: string
+  title: string
+  label?: string
+  text?: string
+  /** "/events" (this site) or "https://…" (another site) */
+  link?: string
+  linkText?: string
+  logoUrl?: string
+  logoAlt?: string
+}
+
+/** DEMO: shown until Sanity is connected. TEDx name and logo rules apply
+ *  to the real one (use only what the TEDx organisers provide). */
+export const demoHighlight: Highlight = {
+  id: 'demo-tedx',
+  label: 'Partnership',
+  title: 'hoi is partnering with TEDx',
+  text: 'Ideas from the Northwest on the TEDx stage. Details coming soon.',
+  link: '/#contact',
+  linkText: 'Stay in the loop',
+}

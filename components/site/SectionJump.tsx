@@ -108,6 +108,7 @@ export function SectionJump() {
       if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return
       const url = new URL(a.href, location.href)
       if (url.origin !== location.origin) return
+      if (url.pathname.startsWith('/studio') || location.pathname.startsWith('/studio')) return // the Sanity editor
       const samePage = url.pathname === location.pathname
       const id = url.hash.length > 1 ? decodeURIComponent(url.hash.slice(1)) : TOP
       // a section on this page that exists, or another page of the site

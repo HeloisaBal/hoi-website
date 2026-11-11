@@ -1,7 +1,8 @@
 'use client'
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_THEME, events, personas, type PersonaId } from './data'
+import { DEFAULT_THEME, events, personas, type PersonaId, type Highlight } from './data'
+import { HighlightBar } from './HighlightBar'
 import { HeroBackdrop } from './Backdrop'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -15,7 +16,7 @@ type ForFilter = PersonaId | 'all'
 const TITLE = 'What’s on at hoi.'
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-export function EventsPage() {
+export function EventsPage({ highlight = null }: { highlight?: Highlight | null }) {
   const [saved, setSaved] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
   const [forWho, setForWho] = useState<ForFilter>('all')
@@ -55,6 +56,7 @@ export function EventsPage() {
     <div className="themed" style={themeVars(theme)}>
       <PointerEffects />
       <ScrollBoat />
+      <HighlightBar highlight={highlight} />
       <Header active="events" />
 
       {/* ================= PAGE HERO ================= */}

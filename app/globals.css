@@ -808,3 +808,39 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 /* ---------- effect 11 dot field (contact card) ---------- */
 .contact-card { position: relative; overflow: hidden; isolation: isolate; background: linear-gradient(135deg, #170a2b 35%, var(--c3)); }
 .dot-field { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
+
+/* ---------- announcement bar (Sanity "Highlight") ---------- */
+.hl-bar {
+  position: relative; z-index: 51; color: #fff;
+  background: linear-gradient(100deg, var(--c3), var(--c2) 55%, var(--c1));
+  transition: --c1 1s ease, --c2 1s ease, --c3 1s ease;
+}
+.hl-inner {
+  display: flex; align-items: center; gap: .75rem; min-height: 44px; max-width: 80rem; margin-inline: auto;
+  padding: .45rem calc(var(--gut) + 2.25rem) .45rem var(--gut); position: relative; font-size: .9rem;
+}
+.hl-logo { height: 28px; width: auto; max-width: 96px; object-fit: contain; flex: none; }
+.hl-label {
+  flex: none; padding: .2rem .6rem; border-radius: 999px; background: rgb(255 255 255 / .2);
+  font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.hl-title { min-width: 0; flex: 1; line-height: 1.35; }
+.hl-title strong { font-weight: 700; }
+.hl-text { opacity: .85; }
+.hl-link {
+  flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: 0 .85rem; border-radius: 999px;
+  background: #fff; color: var(--accent); font-weight: 700; font-size: .85rem; white-space: nowrap; transition: transform .2s ease;
+}
+.hl-link:hover { transform: translateY(-1px); }
+.hl-link:focus-visible, .hl-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.hl-close {
+  position: absolute; right: var(--gut); top: 50%; translate: 0 -50%; display: grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #fff; opacity: .8;
+}
+.hl-close:hover { opacity: 1; background: rgb(255 255 255 / .15); }
+@media (max-width: 767px) {
+  .hl-text { display: none; }
+  .hl-inner { flex-wrap: wrap; row-gap: .4rem; font-size: .85rem; }
+  .hl-title { flex-basis: calc(100% - 6rem); }
+}
+@media (max-width: 479px) { .hl-label { display: none; } }

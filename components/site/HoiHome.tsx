@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_THEME, events, partners, personas, type PersonaId } from './data'
+import { DEFAULT_THEME, events, partners, personas, type Highlight, type PersonaId } from './data'
+import { HighlightBar } from './HighlightBar'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
 import { HousePhoto } from './HousePhoto'
@@ -20,7 +21,7 @@ import { DotField } from './DotField'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
-export function HoiHome() {
+export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) {
   const [persona, setPersona] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('')
@@ -151,6 +152,7 @@ export function HoiHome() {
       {layer}
       <PointerEffects />
       <ScrollBoat />
+      <HighlightBar highlight={highlight} />
       <Header active="home" />
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
