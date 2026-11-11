@@ -665,8 +665,8 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 /* the next section slides up over the coloured stack, with a wavy top edge,
    so the full-colour screen only shows briefly */
 @media (prefers-reduced-motion: no-preference) {
-  .event-stack + .journey { position: relative; z-index: 25; margin-top: -60vh; background: var(--tint); transition: background-color .6s ease; }
-  .event-stack + .journey::before {
+  .event-stack + .journey, .event-stack + .harbour { position: relative; z-index: 25; margin-top: -60vh; background: var(--tint); transition: background-color .6s ease; }
+  .event-stack + .journey::before, .event-stack + .harbour::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: clamp(70px, 12vh, 140px);
     background: var(--tint); pointer-events: none;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,62 C18,28 34,28 50,58 S82,96 100,42 L100,100 L0,100 Z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
