@@ -23,6 +23,8 @@ export type HarbourScene = {
   resize: (w: number, h: number) => void
   /** screen position of each town's label, or null when off screen */
   labelPositions: () => Record<CityId, { x: number; y: number } | null>
+  /** which way north points on screen, in radians clockwise from up (for the compass) */
+  north: () => number
   flyTo: (city: CityId | null, instant?: boolean) => void
   /** room taken by the town panel, so the town stays visible next to it */
   setPanel: (panel: { side: 'right' | 'bottom'; size: number } | null) => void
@@ -299,18 +301,26 @@ export function createHarbourScene(canvas: HTMLCanvasElement, palette: Palette, 
 
   /* ---------- camera and controls ---------- */
   const controls = new OrbitControls(camera, canvas)
-  /* the starting view: the whole map on wide screens, Oldenburg to Bremen on tall ones */
+  /* The starting view. Wide screens: north (the sea) at the back. Tall phone
+     screens: the map is turned a quarter, west at the top and the coast on the
+     right, so the whole Northwest from Emden to Bremen fits the long side. */
   let width = 1, height = 1
   const home = () => {
     const aspect = width / height
     const tall = aspect < 0.9
-    const target = new THREE.Vector3(tall ? 4.5 : 1, 0, tall ? -0.5 : 1.5)
-    const halfW = tall ? 8.5 : 17
+    const target = tall ? new THREE.Vector3(-2.5, 0, 1.2) : new THREE.Vector3(1, 0, 1.5)
+    const halfW = tall ? 8 : 17
     const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect)
-    const dist = Math.min(60, Math.max(20, halfW / Math.tan(hfov / 2)))
-    return { target, dist, polar: tall ? 0.62 : 0.92 }
+    const dist = Math.min(62, Math.max(20, halfW / Math.tan(hfov / 2)))
+    const azimuth = tall ? Math.PI / 2 : 0
+    return { target, dist, polar: tall ? 0.7 : 0.92, azimuth }
   }
-  const homeCam = (h = home()) => h.target.clone().add(new THREE.Vector3().setFromSphericalCoords(h.dist, h.polar, 0))
+  const homeCam = (h = home()) => h.target.clone().add(new THREE.Vector3().setFromSphericalCoords(h.dist, h.polar, h.azimuth))
+  /* how far visitors may turn the map, around its starting direction */
+  const setTurnLimits = (azimuth: number) => {
+    controls.minAzimuthAngle = azimuth - 0.75
+    controls.maxAzimuthAngle = azimuth + 0.75
+  }
   controls.target.copy(home().target)
   camera.position.copy(homeCam())
   let atHome = true
@@ -320,12 +330,12 @@ export function createHarbourScene(canvas: HTMLCanvasElement, palette: Palette, 
   controls.screenSpacePanning = false
   controls.minPolarAngle = 0.45
   controls.maxPolarAngle = 1.12
-  controls.minAzimuthAngle = -0.75
-  controls.maxAzimuthAngle = 0.75
+  setTurnLimits(0)
   controls.minDistance = 9
   controls.maxDistance = 52
-  // phones: one finger scrolls the page as usual, two fingers move the map
-  controls.touches = { ONE: -1 as THREE.TOUCH, TWO: THREE.TOUCH.DOLLY_ROTATE }
+  // phones: swiping up and down still scrolls the page (the browser keeps vertical
+  // swipes); swiping sideways turns the map, two fingers zoom and move it
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }
   canvas.style.touchAction = 'pan-y'
   controls.update()
 
@@ -447,7 +457,9 @@ export function createHarbourScene(canvas: HTMLCanvasElement, palette: Palette, 
     camera.fov = w < 640 ? 40 : 32
     camera.updateProjectionMatrix()
     applyShift()
-    if (atHome && !flight) { const h = home(); controls.target.copy(h.target); camera.position.copy(homeCam(h)); controls.update() }
+    const view = home()
+    setTurnLimits(view.azimuth)
+    if (atHome && !flight) { controls.target.copy(view.target); camera.position.copy(homeCam(view)); controls.update() }
   }
 
   function setPalette(pal: Palette) {
@@ -460,6 +472,7 @@ export function createHarbourScene(canvas: HTMLCanvasElement, palette: Palette, 
 
   return {
     frame, resize, labelPositions, flyTo, setPanel, zoom, setPalette,
+    north: () => controls.getAzimuthalAngle(),
     dispose() {
       controls.dispose()
       houses.dispose()

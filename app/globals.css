@@ -901,6 +901,20 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
   position: absolute; left: 16px; bottom: 16px; z-index: 2; padding: 6px 12px; border-radius: 999px;
   background: rgb(255 255 255 / .85); font-size: 13px; font-weight: 600; color: var(--color-muted); pointer-events: none;
 }
+.world-compass {
+  position: absolute; left: 16px; top: 16px; z-index: 2; display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 50%; background: rgb(255 255 255 / .9); box-shadow: 0 6px 16px -10px rgb(23 10 43 / .5); pointer-events: none;
+}
+/* a needle that turns with the map; the N stays upright at its tip */
+.world-compass > span { position: relative; width: 100%; height: 100%; rotate: var(--north, 0rad); }
+.world-compass i {
+  position: absolute; left: 50%; top: 50%; width: 0; height: 0; translate: -50% -100%;
+  border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 14px solid var(--accent);
+}
+.world-compass b {
+  position: absolute; left: 50%; top: 1px; translate: -50% 0; rotate: calc(var(--north, 0rad) * -1);
+  font-family: var(--font-display); font-weight: 900; font-size: 10px; line-height: 1; color: var(--accent);
+}
 .only-coarse { display: none; }
 @media (pointer: coarse) { .only-coarse { display: inline; } .only-fine { display: none; } }
 

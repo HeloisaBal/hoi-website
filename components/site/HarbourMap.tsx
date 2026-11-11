@@ -43,6 +43,7 @@ export function HarbourMap() {
   const labelRefs = useRef<Partial<Record<CityId, HTMLButtonElement | null>>>({})
   const sceneRef = useRef<HarbourScene | null>(null)
   const panelRef = useRef<HTMLHeadingElement>(null)
+  const compassRef = useRef<HTMLSpanElement>(null)
   const [mode, setMode] = useState<'loading' | '3d' | 'flat'>('loading')
   const [city, setCity] = useState<CityId | null>(null)
 
@@ -82,6 +83,7 @@ export function HarbourMap() {
       if (!scene || !visible || document.hidden) return
       scene.frame(now)
       placeLabels()
+      compassRef.current?.style.setProperty('--north', `${scene.north().toFixed(3)}rad`)
       // follow the persona colours when the visitor picks who they are
       if (++tick % 30 === 0) {
         const pal = readPalette(box)
@@ -191,8 +193,9 @@ export function HarbourMap() {
               <button type="button" onClick={() => sceneRef.current?.zoom(1.33)} aria-label="Zoom out">−</button>
               <button type="button" onClick={close} aria-label="Show the whole map">⟲</button>
             </div>
+            <span ref={compassRef} className="world-compass" aria-hidden="true"><span><i /><b>N</b></span></span>
             <p className="world-hint" aria-hidden="true">
-              <span className="only-fine">Drag to look around · </span><span className="only-coarse">Two fingers to move · </span>tap a town
+              <span className="only-fine">Drag to look around · </span><span className="only-coarse">Swipe sideways to turn · </span>tap a town
             </p>
 
             {city && (
