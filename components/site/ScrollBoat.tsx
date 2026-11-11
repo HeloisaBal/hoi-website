@@ -4,16 +4,17 @@ import { useRef } from 'react'
 import { clamp, useScrollFrame } from './useScrollFrame'
 
 /* ------------------------------------------------------------
-   Scroll idea S8: a little boat that shows how far down the page
+   Scroll idea S8: the hoi house that shows how far down the page
    you are. Wide screens: it sails down a winding route on the right
    edge to the "hoi" harbour. Narrower screens: a thin bar at the
    bottom. Decorative only (hidden from screen readers).
    ------------------------------------------------------------ */
 
+/** The hoi house from the logo: slanted roof with the window cut out. */
 function Boat() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M11 3v11H5l6-11zM13 6l5 8h-5V6zM3 16h18l-2.5 4.5a2 2 0 0 1-1.7 1H7.2a2 2 0 0 1-1.7-1L3 16z" />
+    <svg viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M0 0 L100 14 L100 100 L0 100 Z M44 42 H56 V66 H44 Z" />
     </svg>
   )
 }
@@ -32,14 +33,12 @@ export function ScrollBoat() {
     const route = routeRef.current
     const path = pathRef.current
     const boat = boatRef.current
-    if (route && path && boat && route.offsetParent) {
+    if (route && path && boat && route.getClientRects().length) { // fixed elements have no offsetParent
       const len = path.getTotalLength()
       const pt = path.getPointAtLength(p * len)
-      const ahead = path.getPointAtLength(Math.min(len, p * len + 1))
-      const tilt = (Math.atan2(ahead.y - pt.y, ahead.x - pt.x) * 180) / Math.PI - 90
       const x = (pt.x / 34) * route.clientWidth
       const y = (pt.y / 100) * route.clientHeight
-      boat.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(tilt * 0.35).toFixed(1)}deg)`
+      boat.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
     }
 
     const bar = barRef.current

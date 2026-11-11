@@ -14,6 +14,9 @@ import { LogoWindow } from './LogoWindow'
 import { FounderJourney } from './FounderJourney'
 import { EventStack } from './EventStack'
 import { ParallaxShapes } from './ParallaxShapes'
+import { ScienceBusiness } from './ScienceBusiness'
+import { HarbourMap } from './HarbourMap'
+import { DotField } from './DotField'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
@@ -298,6 +301,10 @@ export function HoiHome() {
       {/* ================= S1: the founder journey ================= */}
       <FounderJourney persona={persona} />
 
+      <HarbourMap />
+
+      <ScienceBusiness />
+
       {/* ================= PEOPLE ================= */}
       <section id="about" className="container-x pt-28">
         <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -339,8 +346,9 @@ export function HoiHome() {
 
       {/* ================= CONTACT ================= */}
       <section id="contact" className="container-x pt-28">
-        <div className="reveal grid items-center gap-10 rounded-[2rem] p-8 text-white sm:p-14 lg:grid-cols-2" style={{ background: 'linear-gradient(135deg, #170a2b 35%, var(--c3))' }}>
-          <div>
+        <div className="contact-card reveal grid items-center gap-10 rounded-[2rem] p-8 text-white sm:p-14 lg:grid-cols-2">
+          <DotField />
+          <div className="relative">
             <h2 key={`c-${firstName}`} className="swap-in font-black uppercase leading-none"
               style={fit(firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.', 'clamp(2.1rem, 5vw, 3.75rem)', '7rem')}>
               {firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.'}
@@ -355,7 +363,7 @@ export function HoiHome() {
               Get in touch
             </a>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="relative grid grid-cols-2 gap-5">
             {[{ n: 'Sarah Fraikue', r: 'Co-CEO' }, { n: 'Arne Stehnken', r: 'Co-CEO' }].map((t) => (
               <div key={t.n}>
                 <div className="flex aspect-square items-center justify-center rounded-2xl bg-white/10 text-sm text-white/60">Photo</div>

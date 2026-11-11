@@ -1,0 +1,55 @@
+'use client'
+
+import { useRef } from 'react'
+import { fit } from './shared'
+import { motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame'
+
+/* ------------------------------------------------------------
+   Scroll idea S3: Science <-> Business. Two columns move in opposite
+   directions as you scroll and meet at hoi in the middle.
+   Placeholder words until hoi sends their content.
+   Reduced motion: a still, three-column layout.
+   ------------------------------------------------------------ */
+
+const SCIENCE = ['Research', 'Lab results', 'PhD projects', 'Patents', 'Prototypes', 'Data']
+const BUSINESS = ['Customers', 'Capital', 'Markets', 'Corporate partners', 'Teams', 'Growth']
+const TITLE = 'Where science meets business'
+
+export function ScienceBusiness() {
+  const sectionRef = useRef<HTMLElement>(null)
+  const leftRef = useRef<HTMLUListElement>(null)
+  const rightRef = useRef<HTMLUListElement>(null)
+  const hubRef = useRef<HTMLDivElement>(null)
+
+  useScrollFrame(() => {
+    const section = sectionRef.current
+    if (!section || !leftRef.current || !rightRef.current || !hubRef.current || !motionAllowed()) return
+    const p = sectionProgress(section)
+    const shift = (p - 0.5) * window.innerHeight * 0.9
+    leftRef.current.style.transform = `translate3d(0, ${(-shift).toFixed(1)}px, 0)`
+    rightRef.current.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`
+    hubRef.current.style.transform = `scale(${(0.7 + Math.sin(p * Math.PI) * 0.55).toFixed(3)}) rotate(${((p - 0.5) * 40).toFixed(1)}deg)`
+  })
+
+  return (
+    <section ref={sectionRef} className="sb" aria-labelledby="sb-title">
+      <div className="sb-pin">
+        <div className="container-x sb-head">
+          <p className="eyebrow">Why hoi</p>
+          <h2 id="sb-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{TITLE}</h2>
+        </div>
+        <div className="sb-cols">
+          <div className="sb-col sb-left">
+            <h3>Science</h3>
+            <div className="sb-track"><ul ref={leftRef}>{SCIENCE.map((w) => <li key={w}>{w}</li>)}</ul></div>
+          </div>
+          <div ref={hubRef} className="sb-hub" aria-hidden="true">hoi</div>
+          <div className="sb-col sb-right">
+            <h3>Business</h3>
+            <div className="sb-track"><ul ref={rightRef}>{BUSINESS.map((w) => <li key={w}>{w}</li>)}</ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
