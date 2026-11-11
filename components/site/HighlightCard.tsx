@@ -8,7 +8,8 @@ import { Arrow } from './shared'
    Floating announcement card (a partnership, a new programme, news).
    Slides in at the bottom-left once the visitor has scrolled past the
    first screen, so it never covers the hero, and steps aside again near
-   sections marked data-no-highlight (contact, footer). Content comes from Sanity
+   sections marked data-no-highlight while they are on screen (the 3D
+   map, contact, footer). Content comes from Sanity
    ("Highlight"), or the demo in data.ts until Sanity is connected.
    Visitors can close it; it comes back when hoi publishes a new one.
    ------------------------------------------------------------ */
@@ -39,7 +40,7 @@ export function HighlightCard({ highlight, after = 1, afterSection }: {
       const past = el ? el.getBoundingClientRect().top < window.innerHeight / 2 : window.scrollY > window.innerHeight * after
       // step aside for sections with their own button in that corner (contact, footer)
       const blocked = Array.from(document.querySelectorAll('[data-no-highlight]'))
-        .some((b) => b.getBoundingClientRect().top < window.innerHeight)
+        .some((b) => { const r = b.getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0 })
       setShown(past && !blocked)
     }
     check()

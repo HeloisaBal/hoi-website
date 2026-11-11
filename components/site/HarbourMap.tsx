@@ -1,184 +1,241 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { CITIES, type HoiEvent } from './data'
+import { useEffect, useRef, useState } from 'react'
+import { CITIES, type CityId, type HoiEvent } from './data'
 import { useContent } from './ContentContext'
-import { EventCard } from './EventCard'
-import { fit } from './shared'
-import { clamp } from './useScrollFrame'
+import { FlatMap } from './harbour/FlatMap'
+import type { HarbourScene, Palette } from './harbour/scene'
+import { Arrow, fit, stegaClean } from './shared'
 
 /* ------------------------------------------------------------
-   Scroll idea S6: the harbour map. A map of the Northwest you can
-   drag in any direction (mouse, finger, arrow keys), zoom with the
-   buttons, and tap pins to see the event.
+   Scroll idea S6, inspired by thelaend.de: the Northwest as a small
+   3D world. Drag to look around (two fingers on phones), tap a town
+   to fly there and see its events in a panel.
 
-   DEMO: the coastline is a simplified drawing and the pin positions
-   are approximate. With Sanity, each event gets a location field and
-   the pins come from there.
+   three.js (~150 KB) only loads when the section is about to come
+   into view. Without WebGL, the flat map (harbour/FlatMap.tsx) shows
+   instead. Reduced motion: no flying, no moving ships or turbines.
+   The pins come from each event's "Place on the map" in Sanity.
    ------------------------------------------------------------ */
 
-const WORLD_W = 1600
-const WORLD_H = 1100
-const TOWNS = Object.values(CITIES).filter((c) => c.name !== 'Bremen')
-const HQ = { name: 'Bremen · hoi', x: CITIES.bremen.x, y: CITIES.bremen.y }
-// pins around their city, so several events in one place don't sit on top of each other
-const AROUND = [{ x: 30, y: -40 }, { x: -110, y: 60 }, { x: 90, y: 90 }, { x: -60, y: -110 }, { x: 150, y: -10 }, { x: -170, y: -20 }]
-/** world position as CSS variables (runtime values, see AGENTS.md) */
-const at = (p: { x: number; y: number }) => ({ '--x': `${p.x}px`, '--y': `${p.y}px` }) as CSSProperties
+const ORDER: CityId[] = ['emden', 'wilhelmshaven', 'bremerhaven', 'oldenburg', 'bremen']
+
+function readPalette(el: Element): Palette {
+  const css = getComputedStyle(el)
+  const v = (n: string, f: string) => css.getPropertyValue(n).trim() || f
+  return { c1: v('--c1', '#00d7b8'), c2: v('--c2', '#003efe'), c3: v('--c3', '#9a00ff'), accent: v('--accent', '#8a00e6'), tint: v('--tint', '#f8f0ff') }
+}
+
+function webglAvailable() {
+  try {
+    const c = document.createElement('canvas')
+    return !!(c.getContext('webgl2') || c.getContext('webgl'))
+  } catch {
+    return false
+  }
+}
 
 export function HarbourMap() {
-  const { events, home } = useContent()
+  const { events, home, settings } = useContent()
   const TITLE = home.mapTitle
-  const perCity: Record<string, number> = {}
-  const pins = events.flatMap((ev) => {
-    if (!ev.city) return []
-    const k = perCity[ev.city] = (perCity[ev.city] ?? -1) + 1
-    const c = CITIES[ev.city]
-    const d = AROUND[k % AROUND.length]
-    return [{ ev, x: c.x + d.x, y: c.y + d.y }]
-  })
-  const mapRef = useRef<HTMLDivElement>(null)
-  const worldRef = useRef<HTMLDivElement>(null)
-  const view = useRef({ x: 0, y: 0, z: 0.9 })
-  const [open, setOpen] = useState<HoiEvent | null>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const labelRefs = useRef<Partial<Record<CityId, HTMLButtonElement | null>>>({})
+  const sceneRef = useRef<HarbourScene | null>(null)
+  const panelRef = useRef<HTMLHeadingElement>(null)
+  const [mode, setMode] = useState<'loading' | '3d' | 'flat'>('loading')
+  const [city, setCity] = useState<CityId | null>(null)
 
+  const byCity = (id: CityId) => events.filter((e) => e.city === id)
+
+  /* load three.js and build the world once the section is near the screen */
   useEffect(() => {
-    const map = mapRef.current
-    const world = worldRef.current
-    if (!map || !world) return
-    const v = view.current
-    let drag: { x: number; y: number; t: number } | null = null
-    let vx = 0
-    let vy = 0
-    let glide = 0
+    const box = boxRef.current
+    const canvas = canvasRef.current
+    if (!box || !canvas) return
+    let cancelled = false
+    let raf = 0
+    let visible = false
+    let started = false
+    let scene: HarbourScene | null = null
+    let lastPalette = ''
 
-    const apply = () => {
-      v.x = clamp(v.x, Math.min(0, map.clientWidth - WORLD_W * v.z), 0)
-      v.y = clamp(v.y, Math.min(0, map.clientHeight - WORLD_H * v.z), 0)
-      world.style.transform = `translate3d(${v.x.toFixed(1)}px, ${v.y.toFixed(1)}px, 0) scale(${v.z.toFixed(3)})`
-    }
-    const centreOn = (wx: number, wy: number, z: number) => {
-      v.z = z
-      v.x = map.clientWidth / 2 - wx * z
-      v.y = map.clientHeight / 2 - wy * z
-      apply()
-    }
-    const home = () => centreOn(980, 720, map.clientWidth < 640 ? 0.6 : 0.9)
-    home()
-
-    const down = (e: PointerEvent) => {
-      if ((e.target as Element).closest('button')) return
-      cancelAnimationFrame(glide)
-      map.setPointerCapture(e.pointerId)
-      drag = { x: e.clientX, y: e.clientY, t: performance.now() }
-      vx = vy = 0
-    }
-    const move = (e: PointerEvent) => {
-      if (!drag) return
-      const now = performance.now()
-      const dx = e.clientX - drag.x
-      const dy = e.clientY - drag.y
-      const dt = Math.max(1, now - drag.t)
-      v.x += dx
-      v.y += dy
-      vx = (dx / dt) * 16
-      vy = (dy / dt) * 16
-      drag = { x: e.clientX, y: e.clientY, t: now }
-      apply()
-    }
-    const up = () => {
-      if (!drag) return
-      drag = null
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const step = () => {
-        vx *= 0.92
-        vy *= 0.92
-        v.x += vx
-        v.y += vy
-        apply()
-        if (Math.abs(vx) + Math.abs(vy) > 0.3) glide = requestAnimationFrame(step)
+    const placeLabels = () => {
+      if (!scene) return
+      const pos = scene.labelPositions()
+      for (const id of ORDER) {
+        const el = labelRefs.current[id]
+        const p = pos[id]
+        if (!el) continue
+        el.classList.toggle('is-off', !p)
+        if (!p) continue
+        // keep labels inside the map's edges
+        const half = el.offsetWidth / 2 + 8
+        const x = Math.min(box.clientWidth - half, Math.max(half, p.x))
+        el.style.transform = `translate3d(${x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) translate(-50%, -100%)`
       }
-      glide = requestAnimationFrame(step)
-    }
-    const key = (e: KeyboardEvent) => {
-      const d = ({ ArrowLeft: [60, 0], ArrowRight: [-60, 0], ArrowUp: [0, 60], ArrowDown: [0, -60] } as Record<string, number[]>)[e.key]
-      if (!d) return
-      e.preventDefault()
-      v.x += d[0]
-      v.y += d[1]
-      apply()
-    }
-    const zoom = (e: Event) => {
-      const b = (e.target as Element).closest<HTMLButtonElement>('[data-zoom]')
-      if (!b) return
-      if (b.dataset.zoom === 'reset') return home()
-      const cx = (map.clientWidth / 2 - v.x) / v.z
-      const cy = (map.clientHeight / 2 - v.y) / v.z
-      centreOn(cx, cy, clamp(v.z * (b.dataset.zoom === 'in' ? 1.25 : 0.8), 0.45, 1.8))
     }
 
-    map.addEventListener('pointerdown', down)
-    map.addEventListener('pointermove', move)
-    map.addEventListener('pointerup', up)
-    map.addEventListener('pointercancel', up)
-    map.addEventListener('keydown', key)
-    map.addEventListener('click', zoom)
-    const ro = new ResizeObserver(apply)
-    ro.observe(map)
+    let tick = 0
+    const loop = (now: number) => {
+      raf = 0
+      if (!scene || !visible || document.hidden) return
+      scene.frame(now)
+      placeLabels()
+      // follow the persona colours when the visitor picks who they are
+      if (++tick % 30 === 0) {
+        const pal = readPalette(box)
+        const key = JSON.stringify(pal)
+        if (key !== lastPalette) { lastPalette = key; scene.setPalette(pal) }
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    const wake = () => { if (!raf && visible && scene) raf = requestAnimationFrame(loop) }
+
+    const start = async () => {
+      started = true
+      if (!webglAvailable()) { setMode('flat'); return }
+      try {
+        const { createHarbourScene } = await import('./harbour/scene')
+        if (cancelled) return
+        const light = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        const pal = readPalette(box)
+        lastPalette = JSON.stringify(pal)
+        scene = createHarbourScene(canvas, pal, { light, reduced })
+        sceneRef.current = scene
+        scene.resize(box.clientWidth, box.clientHeight)
+        setMode('3d')
+        wake()
+      } catch {
+        setMode('flat')
+      }
+    }
+
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting
+      if (visible && !started) start()
+      wake()
+    }, { rootMargin: '400px 0px' })
+    io.observe(box)
+    const ro = new ResizeObserver(() => { scene?.resize(box.clientWidth, box.clientHeight); wake() })
+    ro.observe(box)
+    document.addEventListener('visibilitychange', wake)
+
     return () => {
-      cancelAnimationFrame(glide)
-      map.removeEventListener('pointerdown', down)
-      map.removeEventListener('pointermove', move)
-      map.removeEventListener('pointerup', up)
-      map.removeEventListener('pointercancel', up)
-      map.removeEventListener('keydown', key)
-      map.removeEventListener('click', zoom)
+      cancelled = true
+      cancelAnimationFrame(raf)
+      io.disconnect()
       ro.disconnect()
+      document.removeEventListener('visibilitychange', wake)
+      scene?.dispose()
+      sceneRef.current = null
     }
   }, [])
+
+  /* fly to the town and move focus to its panel */
+  const open = (id: CityId) => {
+    setCity(id)
+    const box = boxRef.current
+    const phone = !!box && box.clientWidth < 640
+    sceneRef.current?.setPanel(box ? (phone ? { side: 'bottom', size: box.clientHeight * 0.62 } : { side: 'right', size: 412 }) : null)
+    sceneRef.current?.flyTo(id)
+    window.setTimeout(() => panelRef.current?.focus(), 60)
+  }
+  const close = () => {
+    const was = city
+    setCity(null)
+    sceneRef.current?.setPanel(null)
+    sceneRef.current?.flyTo(null)
+    if (was) labelRefs.current[was]?.focus()
+  }
+
+  useEffect(() => {
+    if (!city) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  const shown = city ? byCity(city) : []
 
   return (
     <section className="container-x pt-28" aria-labelledby="map-title">
       <p className="eyebrow">{home.mapEyebrow}</p>
       <h2 id="map-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{TITLE}</h2>
-      <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-        {home.mapText}
-      </p>
+      <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">{home.mapText}</p>
 
-      <div ref={mapRef} className="hmap mt-8" tabIndex={0} aria-label="Map of hoi events in the Northwest. Use the arrow keys to move around.">
-        <div ref={worldRef} className="hmap-world">
-          <svg viewBox={`0 0 ${WORLD_W} ${WORLD_H}`} width={WORLD_W} height={WORLD_H} aria-hidden="true">
-            <text className="hmap-sea" x="520" y="190">North Sea</text>
-            <path className="hmap-land" d="M0 470 C120 440 200 470 300 430 S520 380 640 400 C680 420 690 470 720 480 C760 470 770 410 820 380 S960 330 1000 340 C1030 360 1040 380 1060 360 S1200 300 1300 320 S1500 300 1600 310 L1600 1100 L0 1100 Z" />
-            <path className="hmap-river" d="M1045 372 C1060 500 1100 600 1150 820 S1220 1000 1260 1100" />
-          </svg>
-          {TOWNS.map((c) => (
-            <span key={c.name} className="hmap-city" style={at(c)}><i /><span>{c.name}</span></span>
-          ))}
-          <span className="hmap-city is-hq" style={at(HQ)}><i /><span>{HQ.name}</span></span>
-          {pins.map(({ ev, x, y }) => {
-            return (
-              <button key={ev.id} type="button" className="hmap-pin" style={at({ x, y })}
-                aria-expanded={open?.id === ev.id} onClick={() => setOpen(ev)}>
-                {ev.title.replace(/­/g, '')}
-              </button>
-            )
-          })}
-        </div>
+      <div className="mt-8">
+        {mode === 'flat' ? <FlatMap /> : (
+          <div ref={boxRef} data-no-highlight className={`world ${mode === 'loading' ? 'is-loading' : ''} ${city ? 'has-panel' : ''}`}
+            role="region" aria-label="3D map of hoi across the Northwest. Choose a town to see its events.">
+            <canvas ref={canvasRef} className="world-canvas" aria-hidden="true" />
 
-        <div className="hmap-ui">
-          <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-          <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-          <button type="button" data-zoom="reset" aria-label="Reset map">⟲</button>
-        </div>
-        {open && (
-          <div className="hmap-card">
-            <EventCard ev={open} showAsk />
-            <button type="button" className="hmap-close" onClick={() => setOpen(null)} aria-label="Close">×</button>
+            {ORDER.map((id) => {
+              const n = byCity(id).length
+              return (
+                <button key={id} type="button" ref={(el) => { labelRefs.current[id] = el }}
+                  className={`world-label ${id === 'bremen' ? 'is-hq' : ''} ${city === id ? 'is-on' : ''} is-off`}
+                  aria-pressed={city === id} onClick={() => (city === id ? close() : open(id))}>
+                  {id === 'bremen' ? <><b>hoi</b> Bremen</> : CITIES[id].name}
+                  {n > 0 && <span className="world-count">{n}</span>}
+                </button>
+              )
+            })}
+
+            {mode === 'loading' && <p className="world-loading">Loading the map…</p>}
+
+            <div className="world-ui">
+              <button type="button" onClick={() => sceneRef.current?.zoom(0.75)} aria-label="Zoom in">+</button>
+              <button type="button" onClick={() => sceneRef.current?.zoom(1.33)} aria-label="Zoom out">−</button>
+              <button type="button" onClick={close} aria-label="Show the whole map">⟲</button>
+            </div>
+            <p className="world-hint" aria-hidden="true">
+              <span className="only-fine">Drag to look around · </span><span className="only-coarse">Two fingers to move · </span>tap a town
+            </p>
+
+            {city && (
+              <aside className="world-panel" aria-labelledby="world-panel-title">
+                <div className="world-panel-head">
+                  <p className="world-panel-kicker">{city === 'bremen' ? 'hoi startup factory' : 'Northwest'}</p>
+                  <h3 id="world-panel-title" ref={panelRef} tabIndex={-1}>{CITIES[city].name}</h3>
+                  <button type="button" className="world-panel-close" onClick={close} aria-label="Close">×</button>
+                </div>
+                <div className="world-panel-body">
+                  {city === 'bremen' && <p className="world-panel-hq">Our home: {settings.address}</p>}
+                  <p className="world-panel-count">
+                    {shown.length === 0 ? 'No events here right now.' : `${shown.length} ${shown.length === 1 ? 'event' : 'events'} here`}
+                  </p>
+                  <ul className="world-events">
+                    {shown.map((ev) => <PanelEvent key={ev.id} ev={ev} email={settings.email} />)}
+                  </ul>
+                  <a href="/events" className="world-all group">See all events <Arrow /></a>
+                </div>
+              </aside>
+            )}
           </div>
         )}
-        <span className="hmap-note">Drag to explore</span>
       </div>
     </section>
+  )
+}
+
+function PanelEvent({ ev, email }: { ev: HoiEvent; email: string }) {
+  const external = ev.link?.startsWith('http')
+  return (
+    <li className="world-event">
+      <span className="world-event-bar" style={{ '--g': ev.gradient } as React.CSSProperties} aria-hidden="true" />
+      <div className="min-w-0">
+        <p className="world-event-label">{ev.label} · {ev.partner}</p>
+        <p className="world-event-title" lang="de">{ev.title}</p>
+        {ev.meta.length > 0 && <p className="world-event-meta">{ev.meta.join(' · ')}</p>}
+        <div className="world-event-links">
+          {ev.link && (
+            <a href={ev.link} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>More info</a>
+          )}
+          <a href={`mailto:${email}?subject=${encodeURIComponent(stegaClean(ev.title))}`}>Ask about this</a>
+        </div>
+      </div>
+    </li>
   )
 }
