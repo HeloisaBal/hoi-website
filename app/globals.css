@@ -809,38 +809,46 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 .contact-card { position: relative; overflow: hidden; isolation: isolate; background: linear-gradient(135deg, #170a2b 35%, var(--c3)); }
 .dot-field { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
 
-/* ---------- announcement bar (Sanity "Highlight") ---------- */
-.hl-bar {
-  position: relative; z-index: 51; color: #fff;
-  background: linear-gradient(100deg, var(--c3), var(--c2) 55%, var(--c1));
-  transition: --c1 1s ease, --c2 1s ease, --c3 1s ease;
+/* ---------- floating announcement card (Sanity "Highlight") ---------- */
+.hl-card {
+  position: fixed; z-index: 40; left: max(var(--gut), env(safe-area-inset-left, 0px)); bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  width: min(340px, calc(100vw - 2 * var(--gut))); padding: 1.1rem 1.2rem 1.2rem; border-radius: 1.5rem; color: #fff;
+  background: linear-gradient(135deg, var(--c3), var(--c2) 60%, var(--c1));
+  box-shadow: 0 24px 50px -18px color-mix(in srgb, var(--c3) 70%, transparent), 0 0 0 1px rgb(255 255 255 / .15) inset;
+  opacity: 0; transform: translateY(24px) scale(.96); pointer-events: none;
+  transition: opacity .45s ease, transform .55s cubic-bezier(.2,1.3,.4,1), --c1 1s ease, --c2 1s ease, --c3 1s ease;
 }
-.hl-inner {
-  display: flex; align-items: center; gap: .75rem; min-height: 44px; max-width: 80rem; margin-inline: auto;
-  padding: .45rem calc(var(--gut) + 2.25rem) .45rem var(--gut); position: relative; font-size: .9rem;
-}
-.hl-logo { height: 28px; width: auto; max-width: 96px; object-fit: contain; flex: none; }
+.hl-card.is-shown { opacity: 1; transform: none; pointer-events: auto; }
+.hl-card-top { display: flex; align-items: center; gap: .6rem; min-height: 32px; padding-right: 2rem; }
+.hl-logo { height: 28px; width: auto; max-width: 110px; object-fit: contain; }
 .hl-label {
-  flex: none; padding: .2rem .6rem; border-radius: 999px; background: rgb(255 255 255 / .2);
-  font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  padding: .2rem .6rem; border-radius: 999px; background: rgb(255 255 255 / .2);
+  font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
 }
-.hl-title { min-width: 0; flex: 1; line-height: 1.35; }
-.hl-title strong { font-weight: 700; }
-.hl-text { opacity: .85; }
+.hl-title { margin-top: .7rem; font-family: var(--font-display); font-weight: 900; font-size: 1.35rem; line-height: 1.1; text-transform: uppercase; text-wrap: balance; }
+.hl-text { margin-top: .45rem; font-size: .9rem; line-height: 1.45; opacity: .88; }
 .hl-link {
-  flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: 0 .85rem; border-radius: 999px;
-  background: #fff; color: var(--accent); font-weight: 700; font-size: .85rem; white-space: nowrap; transition: transform .2s ease;
+  margin-top: 1rem; display: inline-flex; align-items: center; gap: .35rem; min-height: 40px; padding: 0 1rem; border-radius: 999px;
+  background: #fff; color: var(--accent); font-weight: 700; font-size: .9rem; transition: transform .2s ease;
 }
 .hl-link:hover { transform: translateY(-1px); }
 .hl-link:focus-visible, .hl-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .hl-close {
-  position: absolute; right: var(--gut); top: 50%; translate: 0 -50%; display: grid; place-items: center;
-  width: 32px; height: 32px; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: #fff; opacity: .8;
+  position: absolute; right: .7rem; top: .7rem; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; font-size: 1.3rem; line-height: 1; color: #fff; background: rgb(255 255 255 / .12);
 }
-.hl-close:hover { opacity: 1; background: rgb(255 255 255 / .15); }
-@media (max-width: 767px) {
-  .hl-text { display: none; }
-  .hl-inner { flex-wrap: wrap; row-gap: .4rem; font-size: .85rem; }
-  .hl-title { flex-basis: calc(100% - 6rem); }
+.hl-close:hover { background: rgb(255 255 255 / .25); }
+/* phones: above the little boat bar, a bit more compact */
+@media (max-width: 1359px) { .hl-card { bottom: calc(22px + 1rem + env(safe-area-inset-bottom, 0px)); } }
+/* phones: one compact row so it doesn't cover the content: headline, round arrow, close */
+@media (max-width: 639px) {
+  .hl-card { display: flex; align-items: center; gap: .6rem; padding: .6rem .6rem .6rem 1rem; border-radius: 1.25rem; }
+  .hl-card-top { display: contents; }
+  .hl-label, .hl-logo, .hl-text { display: none; }
+  .hl-title { order: 1; flex: 1; min-width: 0; margin: 0; font-size: .95rem; line-height: 1.15;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hl-link { order: 2; flex: none; margin: 0; width: 40px; min-height: 40px; padding: 0; justify-content: center; }
+  .hl-link-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hl-close { order: 3; position: static; flex: none; width: 32px; height: 32px; }
 }
-@media (max-width: 479px) { .hl-label { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hl-card { transition: none; transform: none; } }

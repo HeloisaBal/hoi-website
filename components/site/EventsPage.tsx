@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_THEME, events, personas, type PersonaId, type Highlight } from './data'
-import { HighlightBar } from './HighlightBar'
+import { HighlightCard } from './HighlightCard'
 import { HeroBackdrop } from './Backdrop'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -56,8 +56,8 @@ export function EventsPage({ highlight = null }: { highlight?: Highlight | null 
     <div className="themed" style={themeVars(theme)}>
       <PointerEffects />
       <ScrollBoat />
-      <HighlightBar highlight={highlight} />
       <Header active="events" />
+      <HighlightCard highlight={highlight} after={0.6} />
 
       {/* ================= PAGE HERO ================= */}
       <section ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={() => heroRef.current?.style.setProperty('--spot', '0')}

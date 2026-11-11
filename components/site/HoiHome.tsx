@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_THEME, events, partners, personas, type Highlight, type PersonaId } from './data'
-import { HighlightBar } from './HighlightBar'
+import { HighlightCard } from './HighlightCard'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
 import { HousePhoto } from './HousePhoto'
@@ -152,8 +152,8 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
       {layer}
       <PointerEffects />
       <ScrollBoat />
-      <HighlightBar highlight={highlight} />
       <Header active="home" />
+      <HighlightCard highlight={highlight} afterSection="#events" />
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
       <LogoWindow intro />
