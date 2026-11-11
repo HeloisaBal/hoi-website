@@ -30,6 +30,17 @@ These apply to every change in this repo, by any person or agent.
 - Design tokens (colours, fonts) live in `app/globals.css`. Persona themes live in `components/site/data.ts`.
 - Pin dependency upgrades deliberately; run `npm audit` before and after.
 
+## Content (Sanity)
+Everything visitors read is editable in Sanity. The Studio is part of this site (`/studio`), so a normal push also updates the Studio. Any change to what the site shows comes with its Sanity side in the same change:
+- New text, section or list: add the field to `sanity/schemaTypes/` (with a character limit that fits the design, help text written for editors, and a place in `sanity/structure.ts`), add it to the query and safety checks in `sanity/lib/mapContent.ts`, give it a built-in fallback in `components/site/content.ts`, read it in the component with `useContent()`, and add it to the seed (`sanity/seed/make-seed.ts`, then `npx tsx sanity/seed/make-seed.ts`).
+- Never hardcode a visitor-facing text in a component when it belongs in Sanity.
+- Renaming or removing a field: existing content does not move by itself. Say so before the push and provide a migration so nothing editors wrote is lost.
+- Keep design decisions in code (colours, persona list, layout, effects). Editors pick from fixed options instead of typing colours or codes.
+- Texts from Sanity are plain text: check them again on the server (length, safe links only, images only from cdn.sanity.io) and never render them as HTML.
+- Click-to-edit adds invisible markers to texts in the Studio preview. Use `stegaClean()` before comparing, measuring or putting a text into a link or id.
+- Run `npx sanity schema validate` after schema changes.
+- Every handover has a "Sanity" line: "no change", "new fields: …" or "action needed: …".
+
 ## Accessibility & SEO
 - Semantic HTML: one `<h1>` per page, headings in order, real `<button>` and `<a>` elements, labels on every input.
 - Everything must work by keyboard with a visible focus ring. Respect `prefers-reduced-motion`.
