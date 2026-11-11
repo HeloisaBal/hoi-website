@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Archivo, Inter } from 'next/font/google'
 import './globals.css'
+import { SectionJump } from '@/components/site/SectionJump'
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -26,7 +27,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${archivo.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SectionJump />
+      </body>
     </html>
   )
 }

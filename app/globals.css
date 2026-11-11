@@ -153,6 +153,26 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
   100%    { opacity: 0; transform: scale(1.25); }
 }
 
+/* section jump: colour covers the screen, the page jumps, then it explodes open from the middle */
+@property --hole { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.jump {
+  position: fixed; inset: 0; z-index: 85; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(118deg, var(--j1), var(--j2) 55%, var(--j3));
+}
+.jump.is-cover { animation: jumpCover .52s cubic-bezier(.7,0,.25,1) both; }
+@keyframes jumpCover { from { clip-path: circle(0 at var(--x) var(--y)); } to { clip-path: circle(150vmax at var(--x) var(--y)); } }
+.jump.is-reveal {
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 2px));
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 2px));
+  animation: jumpReveal .75s cubic-bezier(.6,0,.2,1) both;
+}
+@keyframes jumpReveal { from { --hole: 0px; } to { --hole: 110vmax; } }
+.jump-word { animation: jumpWordIn .45s .12s cubic-bezier(.2,1.4,.4,1) both; }
+.jump.is-reveal .jump-word { animation: jumpWordOut .5s ease-in both; }
+@keyframes jumpWordIn { from { opacity: 0; transform: scale(.6); letter-spacing: -.05em; } }
+@keyframes jumpWordOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.7); filter: blur(6px); } }
+
 /* particle burst */
 .burst { position: fixed; z-index: 90; pointer-events: none; width: 0; height: 0; }
 .particle {
@@ -181,7 +201,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 
 @media (prefers-reduced-motion: reduce) {
   .themed { transition: none; }
-  .wipe, .burst { display: none; }
+  .wipe, .burst, .jump { display: none; }
   .pop, .step-in, .dot { animation: none; }
 }
 
