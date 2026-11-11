@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
-   Content for the /preview homepage.
-   Hard-coded for now; each of these lists becomes a Sanity
-   document type later (persona, event, programme).
+   Built-in content: what the site shows before anything is
+   edited in Sanity (and the seed for the Sanity dataset, see
+   sanity/seed). Colours and personas' ids stay in code.
    ------------------------------------------------------------ */
 
 export type PersonaId = 'researcher' | 'founder' | 'student' | 'company' | 'investor'
@@ -89,6 +89,27 @@ export const personas: Persona[] = [
   },
 ]
 
+/** Places on the harbour map (components/site/HarbourMap.tsx). */
+export const CITIES = {
+  emden: { name: 'Emden', x: 240, y: 520 },
+  wilhelmshaven: { name: 'Wilhelmshaven', x: 720, y: 500 },
+  bremerhaven: { name: 'Bremerhaven', x: 1010, y: 420 },
+  oldenburg: { name: 'Oldenburg', x: 800, y: 720 },
+  bremen: { name: 'Bremen', x: 1150, y: 840 },
+} as const
+export type CityId = keyof typeof CITIES
+
+/** Card colours editors can pick from (brand gradients). */
+export const EVENT_COLOURS = {
+  'teal-blue': { title: 'Teal → blue', gradient: 'linear-gradient(150deg, #00d7b8 0%, #003efe 100%)' },
+  'blue-purple': { title: 'Blue → purple', gradient: 'linear-gradient(150deg, #003efe 0%, #9a00ff 100%)' },
+  purple: { title: 'Purple', gradient: 'linear-gradient(150deg, #9a00ff 0%, #7400c2 100%)' },
+  'purple-teal': { title: 'Purple → teal', gradient: 'linear-gradient(150deg, #9a00ff 0%, #00d7b8 100%)' },
+  green: { title: 'Green', gradient: 'linear-gradient(150deg, #34d399 0%, #047857 100%)' },
+  navy: { title: 'Navy', gradient: 'linear-gradient(150deg, #3f5cff 0%, #091a52 100%)' },
+} as const
+export type EventColour = keyof typeof EVENT_COLOURS
+
 export type HoiEvent = {
   id: string
   partner: string
@@ -97,6 +118,10 @@ export type HoiEvent = {
   meta: string[]
   gradient: string
   for: PersonaId[]
+  /** where the pin goes on the harbour map */
+  city?: CityId
+  /** optional page with more info or registration */
+  link?: string
 }
 
 export const events: HoiEvent[] = [
@@ -106,8 +131,9 @@ export const events: HoiEvent[] = [
     label: 'Ecosystem event',
     title: 'Prototypen\u00adparty Oldenburg',
     meta: ['12 November 2026 · 16:00', '@ hallig hanken'],
-    gradient: 'linear-gradient(150deg, #00d7b8 0%, #003efe 100%)',
+    gradient: EVENT_COLOURS['teal-blue'].gradient,
     for: ['founder', 'student', 'researcher', 'investor'],
+    city: 'oldenburg',
   },
   {
     id: 'go-batch-19',
@@ -115,8 +141,9 @@ export const events: HoiEvent[] = [
     label: 'Incubator programme',
     title: 'Call for applications',
     meta: ['Batch #19', 'Start January 2027'],
-    gradient: 'linear-gradient(150deg, #003efe 0%, #9a00ff 100%)',
+    gradient: EVENT_COLOURS['blue-purple'].gradient,
     for: ['founder', 'researcher', 'student'],
+    city: 'oldenburg',
   },
   {
     id: 'research-to-business',
@@ -124,8 +151,9 @@ export const events: HoiEvent[] = [
     label: 'Funding initiative',
     title: 'Research to business call',
     meta: ['Up to €150,000 funding', 'Continuous call, no deadlines'],
-    gradient: 'linear-gradient(150deg, #9a00ff 0%, #7400c2 100%)',
+    gradient: EVENT_COLOURS.purple.gradient,
     for: ['researcher', 'founder', 'company'],
+    city: 'bremen',
   },
   {
     id: 'bmi-microdegree',
@@ -133,8 +161,9 @@ export const events: HoiEvent[] = [
     label: 'New microdegree',
     title: 'Business model innovation',
     meta: ['Dates coming soon'],
-    gradient: 'linear-gradient(150deg, #9a00ff 0%, #00d7b8 100%)',
+    gradient: EVENT_COLOURS['purple-teal'].gradient,
     for: ['student', 'founder', 'company'],
+    city: 'bremen',
   },
 ]
 
@@ -186,13 +215,23 @@ export const journey: JourneyStage[] = [
   },
 ]
 
-export const partners = [
+export type Partner = { name: string; logoUrl?: string; href?: string }
+
+export const partners: Partner[] = [
   'Universität Bremen',
   'Universität Oldenburg',
   'Handelskammer Bremen',
   'swb AG',
   'Hochschule Bremen',
   'Constructor University',
+].map((name) => ({ name }))
+
+export type TeamMember = { name: string; role: string; photoUrl?: string; photoAlt?: string }
+
+/** People shown in the contact card. */
+export const team: TeamMember[] = [
+  { name: 'Sarah Fraikue', role: 'Co-CEO' },
+  { name: 'Arne Stehnken', role: 'Co-CEO' },
 ]
 
 /** The announcement bar at the top of every page. In Sanity: the

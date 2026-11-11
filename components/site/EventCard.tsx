@@ -1,7 +1,8 @@
 'use client'
 
 import type { HoiEvent } from './data'
-import { Arrow } from './shared'
+import { Arrow, stegaClean } from './shared'
+import { useContent } from './ContentContext'
 
 /**
  * One event, styled like hoi's Instagram announcement posts.
@@ -17,6 +18,7 @@ export function EventCard({ ev, match = true, picked = false, row = false, showA
   showAsk?: boolean
   style?: React.CSSProperties
 }) {
+  const { settings } = useContent()
   const size = row
     ? 'min-h-[320px] w-[80%] shrink-0 snap-start sm:min-h-[380px] sm:w-auto'
     : 'min-h-[360px] sm:min-h-[400px]'
@@ -31,15 +33,23 @@ export function EventCard({ ev, match = true, picked = false, row = false, showA
         )}
       </div>
       <span className="pill mt-auto self-start">{ev.label}</span>
-      <h3 lang="de" className="mt-3 text-[clamp(1.45rem,2.1vw,1.85rem)] font-extrabold uppercase leading-none hyphens-manual">{ev.title}</h3>
+      <h3 lang="de" className="mt-3 text-[clamp(1.45rem,2.1vw,1.85rem)] font-extrabold uppercase leading-none hyphens-auto">{ev.title}</h3>
       <p className="mt-5 text-sm leading-relaxed text-white/90">
         {ev.meta.map((m) => <span key={m} className="block">{m}</span>)}
       </p>
       {showAsk && (
-        <a href={`mailto:team@hoi-startup-factory.de?subject=${encodeURIComponent(ev.title.replace(/­/g, ''))}`}
-          className="group mt-6 inline-flex items-center gap-2 self-start rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white hover:text-ink">
-          Ask about this <Arrow />
-        </a>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {ev.link && (
+            <a href={ev.link} {...(ev.link.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5">
+              More info <Arrow />
+            </a>
+          )}
+          <a href={`mailto:${settings.email}?subject=${encodeURIComponent(stegaClean(ev.title).replace(/\u00ad/g, ''))}`}
+            className="group inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white hover:text-ink">
+            Ask about this <Arrow />
+          </a>
+        </div>
       )}
     </article>
   )

@@ -1,6 +1,10 @@
 'use client'
 
+import { stegaClean } from 'next-sanity'
 import type { Theme } from './data'
+
+/** Removes the invisible click-to-edit markers Sanity adds to texts in the Studio preview. */
+export { stegaClean }
 
 /* Helpers shared by the homepage and the other pages. */
 
@@ -10,6 +14,7 @@ import type { Theme } from './data'
  * horizontal space taken by padding around the heading.
  */
 export function fit(text: string, max: string, gutter: string): React.CSSProperties {
+  text = stegaClean(text)
   const longest = Math.max(4, ...text.split(/\s+/).map((w) => w.length))
   return { fontSize: `min(${max}, calc((100vw - ${gutter}) / ${(longest * 0.8).toFixed(2)}))` }
 }

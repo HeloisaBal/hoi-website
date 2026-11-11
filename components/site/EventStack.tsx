@@ -5,6 +5,7 @@ import { useRef } from 'react'
 import type { HoiEvent, PersonaId } from './data'
 import { EventCard } from './EventCard'
 import { Arrow, fit } from './shared'
+import { useContent } from './ContentContext'
 import { clamp, motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame'
 
 /* ------------------------------------------------------------
@@ -47,15 +48,16 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const bandRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  const { home } = useContent()
   // soft background per event: its main colour mixed with white
   const colours = events.map((e) => mix(hex(e.gradient).slice(1), 'ffffff', 0.8))
-  const title = plural ? `Next up for ${plural}` : 'Next up at hoi'
+  const title = plural ? `Next up for ${plural}` : home.eventsTitle
   const n = events.length
 
   useScrollFrame(() => {
     const section = sectionRef.current
     const pin = pinRef.current
-    if (!section || !pin || !motionAllowed()) return
+    if (!section || !pin || !n || !motionAllowed()) return
     const progress = sectionProgress(section)
     const cardsP = clamp(progress / CARDS_SHARE, 0, 1)
     const waveP = clamp((progress - CARDS_SHARE) / (WAVES_END - CARDS_SHARE), 0, 1)
@@ -88,14 +90,14 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
 
   return (
     <section id="events" ref={sectionRef} className="event-stack" aria-labelledby="events-title">
-      <div ref={pinRef} className="event-stack-pin" style={{ backgroundColor: colours[0] }}>
+      <div ref={pinRef} className="event-stack-pin" style={{ backgroundColor: colours[0] ?? 'var(--tint)' }}>
         <div ref={marqueeRef} className="event-stack-marquee" aria-hidden="true">
-          WHAT’S ON · IM NORDEN GRÜNDEN · WHAT’S ON · MIT RÜCKENWIND ·
+          {home.eventsMarquee}
         </div>
 
         <div className="container-x event-stack-head">
           <div>
-            <p className="eyebrow">What’s on</p>
+            <p className="eyebrow">{home.eventsEyebrow}</p>
             <h2 id="events-title" key={title} className="swap-in mt-2 font-black uppercase leading-none"
               style={fit(title, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{title}</h2>
           </div>
@@ -104,6 +106,12 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
           </Link>
         </div>
 
+        {n === 0 && (
+          <div className="event-stack-empty">
+            <p className="font-display text-2xl font-bold text-ink">New events are coming soon.</p>
+            <p className="mt-2 text-muted">Follow hoi on Instagram to hear first.</p>
+          </div>
+        )}
         <div className="event-stack-cards">
           {events.map((ev, i) => (
             <div key={ev.id} ref={(el) => { cardRefs.current[i] = el }} className="event-stack-card" style={{ zIndex: i + 1 }}>
@@ -112,7 +120,7 @@ export function EventStack({ events, persona, plural }: { events: HoiEvent[]; pe
           ))}
         </div>
 
-        <span ref={counterRef} className="event-stack-counter" aria-hidden="true">01 / {String(n).padStart(2, '0')}</span>
+        {n > 0 && <span ref={counterRef} className="event-stack-counter" aria-hidden="true">01 / {String(n).padStart(2, '0')}</span>}
 
         {WAVES.map((d, k) => (
           <div key={k} ref={(el) => { bandRefs.current[k] = el }} className={`event-stack-band band-${k + 1}`} style={{ zIndex: 20 + k }} aria-hidden="true">

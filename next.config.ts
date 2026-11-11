@@ -8,12 +8,12 @@ import type { NextConfig } from 'next'
  * A full script/style CSP needs per-request nonces and is planned as a
  * separate step.
  *
- * NOTE for the Sanity step: Sanity's visual editing (Presentation tool) shows
- * the site inside an iframe in the Studio. When we add it, `frame-ancestors`
- * must allow the Studio's origin, or the preview will be blank.
+ * Framing: the Sanity Studio lives on this same site (/studio) and shows the
+ * site inside an iframe for its live preview, so pages may be framed by this
+ * site itself ('self' / SAMEORIGIN), and by nobody else.
  */
 const contentSecurityPolicy = [
-  "frame-ancestors 'none'", // nobody may embed the site in an iframe (clickjacking)
+  "frame-ancestors 'self'", // only this site may embed it (the Studio preview); stops clickjacking
   "object-src 'none'", // no Flash/plugins
   "base-uri 'self'", // injected <base> tags can't redirect relative URLs
   "form-action 'self'", // forms can only submit to this site
@@ -21,7 +21,7 @@ const contentSecurityPolicy = [
 
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: contentSecurityPolicy },
-  { key: 'X-Frame-Options', value: 'DENY' }, // older browsers that ignore frame-ancestors
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' }, // older browsers that ignore frame-ancestors
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },

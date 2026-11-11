@@ -17,7 +17,12 @@ const WIN_H = 0.24
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
 
-export function LogoWindow({ intro = false }: { intro?: boolean }) {
+export function LogoWindow({ intro = false, title = 'Welcome to the\nharbour of ideas', sub = 'Im Norden gründen – mit Rückenwind.' }: {
+  intro?: boolean
+  /** a line break in the text starts a new line */
+  title?: string
+  sub?: string
+}) {
   const sectionRef = useRef<HTMLElement>(null)
   const houseRef = useRef<HTMLDivElement>(null)
   const afterRef = useRef<HTMLDivElement>(null)
@@ -48,8 +53,10 @@ export function LogoWindow({ intro = false }: { intro?: boolean }) {
       <div className="logo-window-sticky">
         <div ref={afterRef} className="logo-window-after">
           <div>
-            <h2 id="window-title" className="logo-window-title">Welcome to the<br />harbour of ideas</h2>
-            <p className="logo-window-sub">Im Norden gründen – mit Rückenwind.</p>
+            <h2 id="window-title" className="logo-window-title">
+              {title.split('\n').map((l, i) => <span key={i} className="block">{l}</span>)}
+            </h2>
+            <p className="logo-window-sub">{sub}</p>
             {intro && <p className="logo-window-next" aria-hidden="true">Keep scrolling to say hoi ↓</p>}
           </div>
         </div>

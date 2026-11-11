@@ -2,20 +2,20 @@
 
 import { useRef } from 'react'
 import { fit } from './shared'
+import { useContent } from './ContentContext'
 import { motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame'
 
 /* ------------------------------------------------------------
    Scroll idea S3: Science <-> Business. Two columns move in opposite
    directions as you scroll and meet at hoi in the middle.
-   Placeholder words until hoi sends their content.
+   Words and titles are edited in Sanity (Homepage → Science & business).
    Reduced motion: a still, three-column layout.
    ------------------------------------------------------------ */
 
-const SCIENCE = ['Research', 'Lab results', 'PhD projects', 'Patents', 'Prototypes', 'Data']
-const BUSINESS = ['Customers', 'Capital', 'Markets', 'Corporate partners', 'Teams', 'Growth']
-const TITLE = 'Where science meets business'
 
 export function ScienceBusiness() {
+  const { home } = useContent()
+  const TITLE = home.sbTitle
   const sectionRef = useRef<HTMLElement>(null)
   const leftRef = useRef<HTMLUListElement>(null)
   const rightRef = useRef<HTMLUListElement>(null)
@@ -35,18 +35,18 @@ export function ScienceBusiness() {
     <section ref={sectionRef} className="sb" aria-labelledby="sb-title">
       <div className="sb-pin">
         <div className="container-x sb-head">
-          <p className="eyebrow">Why hoi</p>
+          <p className="eyebrow">{home.sbEyebrow}</p>
           <h2 id="sb-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{TITLE}</h2>
         </div>
         <div className="sb-cols">
           <div className="sb-col sb-left">
             <h3>Science</h3>
-            <div className="sb-track"><ul ref={leftRef}>{SCIENCE.map((w) => <li key={w}>{w}</li>)}</ul></div>
+            <div className="sb-track"><ul ref={leftRef}>{home.scienceWords.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
           </div>
           <div ref={hubRef} className="sb-hub" aria-hidden="true">hoi</div>
           <div className="sb-col sb-right">
             <h3>Business</h3>
-            <div className="sb-track"><ul ref={rightRef}>{BUSINESS.map((w) => <li key={w}>{w}</li>)}</ul></div>
+            <div className="sb-track"><ul ref={rightRef}>{home.businessWords.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
           </div>
         </div>
       </div>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_THEME, events, partners, personas, type Highlight, type PersonaId } from './data'
+import { DEFAULT_THEME, type PersonaId } from './data'
+import { useContent } from './ContentContext'
 import { HighlightCard } from './HighlightCard'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
 import { HousePhoto } from './HousePhoto'
-import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, themeVars } from './shared'
+import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, stegaClean, themeVars } from './shared'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PointerEffects } from './PointerEffects'
@@ -21,7 +22,8 @@ import { DotField } from './DotField'
 
 type Step = 'name' | 'loading' | 'persona' | 'done'
 
-export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) {
+export function HoiHome() {
+  const { personas, events, partners, team, home, settings, highlight } = useContent()
   const [persona, setPersona] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('')
@@ -42,7 +44,7 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
     if (p && personas.some((x) => x.id === p)) { setPersona(p); setReturning(true); setStep('done') }
     else if (n) setStep('persona')
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [])
+  }, [personas])
 
   /* scroll reveal */
   useEffect(() => {
@@ -141,10 +143,10 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
   const sortedEvents = useMemo(() => {
     if (!persona) return events
     return [...events].sort((a, b) => Number(b.for.includes(persona)) - Number(a.for.includes(persona)))
-  }, [persona])
+  }, [persona, events])
 
   const mailSubject = encodeURIComponent(
-    `Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`,
+    stegaClean(`Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`),
   )
 
   return (
@@ -156,7 +158,7 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
       <HighlightCard highlight={highlight} afterSection="#events" />
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
-      <LogoWindow intro />
+      <LogoWindow intro title={home.introTitle} sub={home.introSub} />
 
       {/* ================= HERO ================= */}
       <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
@@ -172,14 +174,14 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
             {step === 'name' && (
               <form key="name" onSubmit={submitName} className="flex w-full flex-col items-center">
                 <span className="hero-pill rise" style={rise(0)}>
-                  <span className="pill-dot" aria-hidden="true" />Im Norden gründen – mit Rückenwind!
+                  <span className="pill-dot" aria-hidden="true" />{home.heroPill}
                 </span>
                 <h1 className="rise mt-8 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
                   style={{ ...rise(1), fontSize: 'clamp(3.4rem, 10vw, 8.5rem)' }}>
                   Hoi! <WaveHand />
                 </h1>
                 <label htmlFor="hoi-name" className="rise mt-6 font-display text-2xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]" style={rise(2)}>
-                  What should we call you?
+                  {home.namePrompt}
                 </label>
                 <div className="rise mt-10 w-full max-w-lg" style={rise(3)}>
                   <input
@@ -290,7 +292,8 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
                 )}
                 </div>
 
-                <HousePhoto src="/photos/hoi-team.jpg" alt="The hoi startup factory team in front of a hoi flag" style={rise(3)} />
+                <HousePhoto src={home.heroPhoto.url.startsWith('https://') ? `${home.heroPhoto.url}?w=900&h=1125&fit=crop&auto=format` : home.heroPhoto.url}
+                  alt={home.heroPhoto.alt} style={rise(3)} />
               </div>
             )}
           </div>
@@ -311,20 +314,25 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
       <section id="about" className="container-x pt-28">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="reveal grid grid-cols-2 gap-4">
-            <div className="lift flex aspect-[3/4] items-center justify-center rounded-[1.4rem] bg-white p-4 text-center text-sm text-muted">
-              Photo from Hoi’s Instagram:<br />founder welcomed with flowers
-            </div>
-            <div className="lift mt-12 flex aspect-[3/4] items-center justify-center rounded-[1.4rem] bg-[#e3f9f5] p-4 text-center text-sm text-teal-700">
-              Photo from Hoi’s Instagram:<br />pitch at the whiteboard
-            </div>
+            {home.aboutPhotos.map((ph, i) => (
+              <div key={i} className={`lift aspect-[3/4] overflow-hidden rounded-[1.4rem] ${i === 1 ? 'mt-12 bg-[#e3f9f5] text-teal-700' : 'bg-white text-muted'}`}>
+                {ph ? (
+                  <img src={`${ph.url}?w=600&h=800&fit=crop&auto=format`} alt={ph.alt} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <span className="flex h-full items-center justify-center p-4 text-center text-sm">
+                    {i === 0 ? 'Photo: founder welcomed with flowers' : 'Photo: pitch at the whiteboard'}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
           <div className="reveal">
-            <p className="eyebrow">Founders at hoi</p>
+            <p className="eyebrow">{home.aboutEyebrow}</p>
             <blockquote className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-              “A quote from one of the founders hoi supports goes here.”
+              “{home.quote}”
             </blockquote>
-            <p className="mt-5 text-muted">Name · Startup · Programme</p>
-            <a href="#contact" className="mt-7 inline-block font-semibold text-accent hover:underline">Meet our startups →</a>
+            <p className="mt-5 text-muted">{home.quoteBy}</p>
+            <a href="#contact" className="mt-7 inline-block font-semibold text-accent hover:underline">{home.aboutLinkText} →</a>
           </div>
         </div>
       </section>
@@ -332,45 +340,55 @@ export function HoiHome({ highlight = null }: { highlight?: Highlight | null }) 
       {/* ================= PARTNERS ================= */}
       <section className="pt-28">
         <p className="reveal container-x text-center text-xs font-bold uppercase tracking-[0.14em] text-muted">
-          Backed by science and business in the Northwest
+          {home.partnersTitle}
         </p>
         <div className="marquee-mask mt-8 overflow-hidden" aria-label="Partners">
           <ul className="animate-marquee flex w-max gap-4">
-            {[...partners, ...partners].map((p, i) => (
-              <li key={i} aria-hidden={i >= partners.length}
-                className="flex h-20 min-w-[220px] items-center justify-center rounded-2xl border border-line px-6 text-sm font-semibold text-muted">
-                {p}
-              </li>
-            ))}
+            {[...partners, ...partners].map((p, i) => {
+              const inner = p.logoUrl
+                ? <img src={`${p.logoUrl}?h=96&fit=max&auto=format`} alt={p.name} className="max-h-10 w-auto max-w-[160px] object-contain" loading="lazy" />
+                : p.name
+              const copy = i >= partners.length
+              return (
+                <li key={i} aria-hidden={copy}
+                  className="flex h-20 min-w-[220px] items-center justify-center rounded-2xl border border-line px-6 text-sm font-semibold text-muted">
+                  {p.href
+                    ? <a href={p.href} target="_blank" rel="noopener noreferrer" tabIndex={copy ? -1 : undefined} className="flex items-center hover:text-ink">{inner}</a>
+                    : inner}
+                </li>
+              )
+            })}
           </ul>
         </div>
       </section>
 
       {/* ================= CONTACT ================= */}
-      <section id="contact" className="container-x pt-28">
+      <section id="contact" className="container-x pt-28" data-no-highlight>
         <div className="contact-card reveal grid items-center gap-10 rounded-[2rem] p-8 text-white sm:p-14 lg:grid-cols-2">
           <DotField />
           <div className="relative">
             <h2 key={`c-${firstName}`} className="swap-in font-black uppercase leading-none"
-              style={fit(firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.', 'clamp(2.1rem, 5vw, 3.75rem)', '7rem')}>
-              {firstName ? `Hoi ${firstName}, we’re listening.` : 'Hoi cares. Say hoi.'}
+              style={fit(firstName ? `Hoi ${firstName}, we’re listening.` : home.contactTitle, 'clamp(2.1rem, 5vw, 3.75rem)', '7rem')}>
+              {firstName ? `Hoi ${firstName}, we’re listening.` : home.contactTitle}
             </h2>
             <p className="mt-5 max-w-md text-lg leading-relaxed text-white/80">
               {current
                 ? `Tell us about yourself. We talk to ${current.plural} every week and love hearing new ideas.`
-                : 'Got an idea, a question or a startup? We’d love to hear from you.'}
+                : home.contactText}
             </p>
-            <a href={`mailto:team@hoi-startup-factory.de?subject=${mailSubject}`} data-magnetic
+            <a href={`mailto:${settings.email}?subject=${mailSubject}`} data-magnetic
               className="mt-8 inline-flex min-h-12 items-center rounded-full bg-accent px-7 font-semibold transition hover:-translate-y-0.5 hover:brightness-110">
-              Get in touch
+              {home.contactButton}
             </a>
           </div>
           <div className="relative grid grid-cols-2 gap-5">
-            {[{ n: 'Sarah Fraikue', r: 'Co-CEO' }, { n: 'Arne Stehnken', r: 'Co-CEO' }].map((t) => (
-              <div key={t.n}>
-                <div className="flex aspect-square items-center justify-center rounded-2xl bg-white/10 text-sm text-white/60">Photo</div>
-                <p className="mt-3 font-semibold">{t.n}</p>
-                <p className="text-sm text-white/65">{t.r}</p>
+            {team.slice(0, 4).map((t) => (
+              <div key={t.name}>
+                {t.photoUrl
+                  ? <img src={`${t.photoUrl}?w=400&h=400&fit=crop&auto=format`} alt={t.photoAlt || t.name} className="aspect-square w-full rounded-2xl object-cover" loading="lazy" />
+                  : <div className="flex aspect-square items-center justify-center rounded-2xl bg-white/10 text-sm text-white/60">Photo</div>}
+                <p className="mt-3 font-semibold">{t.name}</p>
+                <p className="text-sm text-white/65">{t.role}</p>
               </div>
             ))}
           </div>

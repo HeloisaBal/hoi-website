@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { ContentProvider } from '@/components/site/ContentContext'
 import { EventsPage } from '@/components/site/EventsPage'
-import { getHighlight } from '@/sanity/lib/highlight'
+import { getContent } from '@/sanity/lib/content'
 
-// look for new content from Sanity at most once a minute
+// new content shows within seconds through <SanityLive /> (layout); this is the safety net
 export const revalidate = 60
 
 export const metadata: Metadata = {
@@ -11,5 +12,9 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  return <EventsPage highlight={await getHighlight()} />
+  return (
+    <ContentProvider content={await getContent()}>
+      <EventsPage />
+    </ContentProvider>
+  )
 }

@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef } from 'react'
-import { journey, type PersonaId } from './data'
+import type { PersonaId } from './data'
+import { useContent } from './ContentContext'
 import { Arrow, fit } from './shared'
 import { motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame'
 
@@ -14,9 +15,10 @@ import { motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame
    ------------------------------------------------------------ */
 
 const PINNED = '(min-width: 768px) and (prefers-reduced-motion: no-preference)'
-const TITLE = 'From lab idea to company'
 
 export function FounderJourney({ persona }: { persona: PersonaId | null }) {
+  const { journey, home } = useContent()
+  const TITLE = home.journeyTitle
   const sectionRef = useRef<HTMLElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLOListElement>(null)
@@ -76,7 +78,7 @@ export function FounderJourney({ persona }: { persona: PersonaId | null }) {
     <section id="programmes" ref={sectionRef} className="journey" aria-labelledby="journey-title">
       <div className="journey-sticky">
         <div className="container-x">
-          <p className="eyebrow">What we do</p>
+          <p className="eyebrow">{home.journeyEyebrow}</p>
           <h2 id="journey-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>
             {TITLE}
           </h2>

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { events, type HoiEvent } from './data'
+import { CITIES, type HoiEvent } from './data'
+import { useContent } from './ContentContext'
 import { EventCard } from './EventCard'
 import { fit } from './shared'
 import { clamp } from './useScrollFrame'
@@ -18,25 +19,24 @@ import { clamp } from './useScrollFrame'
 
 const WORLD_W = 1600
 const WORLD_H = 1100
-const CITIES = [
-  { name: 'Emden', x: 240, y: 520 },
-  { name: 'Wilhelmshaven', x: 720, y: 500 },
-  { name: 'Bremerhaven', x: 1010, y: 420 },
-  { name: 'Oldenburg', x: 800, y: 720 },
-]
-const HQ = { name: 'Bremen · hoi', x: 1150, y: 840 }
-// demo positions per event id, near the city where it happens
-const PIN_AT: Record<string, { x: number; y: number }> = {
-  prototypenparty: { x: 820, y: 690 },
-  'go-batch-19': { x: 700, y: 790 },
-  'research-to-business': { x: 1120, y: 920 },
-  'bmi-microdegree': { x: 1230, y: 800 },
-}
-const TITLE = 'Find hoi across the Northwest'
+const TOWNS = Object.values(CITIES).filter((c) => c.name !== 'Bremen')
+const HQ = { name: 'Bremen · hoi', x: CITIES.bremen.x, y: CITIES.bremen.y }
+// pins around their city, so several events in one place don't sit on top of each other
+const AROUND = [{ x: 30, y: -40 }, { x: -110, y: 60 }, { x: 90, y: 90 }, { x: -60, y: -110 }, { x: 150, y: -10 }, { x: -170, y: -20 }]
 /** world position as CSS variables (runtime values, see AGENTS.md) */
 const at = (p: { x: number; y: number }) => ({ '--x': `${p.x}px`, '--y': `${p.y}px` }) as CSSProperties
 
 export function HarbourMap() {
+  const { events, home } = useContent()
+  const TITLE = home.mapTitle
+  const perCity: Record<string, number> = {}
+  const pins = events.flatMap((ev) => {
+    if (!ev.city) return []
+    const k = perCity[ev.city] = (perCity[ev.city] ?? -1) + 1
+    const c = CITIES[ev.city]
+    const d = AROUND[k % AROUND.length]
+    return [{ ev, x: c.x + d.x, y: c.y + d.y }]
+  })
   const mapRef = useRef<HTMLDivElement>(null)
   const worldRef = useRef<HTMLDivElement>(null)
   const view = useRef({ x: 0, y: 0, z: 0.9 })
@@ -139,10 +139,10 @@ export function HarbourMap() {
 
   return (
     <section className="container-x pt-28" aria-labelledby="map-title">
-      <p className="eyebrow">On the map</p>
+      <p className="eyebrow">{home.mapEyebrow}</p>
       <h2 id="map-title" className="mt-2 font-black uppercase leading-none" style={fit(TITLE, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>{TITLE}</h2>
       <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-        Events and programmes from the coast to Bremen. Drag the map in any direction and tap a pin.
+        {home.mapText}
       </p>
 
       <div ref={mapRef} className="hmap mt-8" tabIndex={0} aria-label="Map of hoi events in the Northwest. Use the arrow keys to move around.">
@@ -152,15 +152,13 @@ export function HarbourMap() {
             <path className="hmap-land" d="M0 470 C120 440 200 470 300 430 S520 380 640 400 C680 420 690 470 720 480 C760 470 770 410 820 380 S960 330 1000 340 C1030 360 1040 380 1060 360 S1200 300 1300 320 S1500 300 1600 310 L1600 1100 L0 1100 Z" />
             <path className="hmap-river" d="M1045 372 C1060 500 1100 600 1150 820 S1220 1000 1260 1100" />
           </svg>
-          {CITIES.map((c) => (
+          {TOWNS.map((c) => (
             <span key={c.name} className="hmap-city" style={at(c)}><i /><span>{c.name}</span></span>
           ))}
           <span className="hmap-city is-hq" style={at(HQ)}><i /><span>{HQ.name}</span></span>
-          {events.map((ev) => {
-            const pos = PIN_AT[ev.id]
-            if (!pos) return null
+          {pins.map(({ ev, x, y }) => {
             return (
-              <button key={ev.id} type="button" className="hmap-pin" style={at(pos)}
+              <button key={ev.id} type="button" className="hmap-pin" style={at({ x, y })}
                 aria-expanded={open?.id === ev.id} onClick={() => setOpen(ev)}>
                 {ev.title.replace(/­/g, '')}
               </button>

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { Archivo, Inter } from 'next/font/google'
 import './globals.css'
+import { draftMode } from 'next/headers'
+import { VisualEditing } from 'next-sanity/visual-editing'
 import { SectionJump } from '@/components/site/SectionJump'
+import { SanityLive } from '@/sanity/lib/live'
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -24,12 +27,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const preview = (await draftMode()).isEnabled
   return (
     <html lang="en" className={`${archivo.variable} ${inter.variable}`}>
       <body>
         {children}
         <SectionJump />
+        {/* new content from Sanity appears without a reload */}
+        {SanityLive && <SanityLive />}
+        {/* click-to-edit outlines, only inside the Studio's preview */}
+        {preview && <VisualEditing />}
       </body>
     </html>
   )
