@@ -34,9 +34,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {children}
         <SectionJump />
-        {/* new content from Sanity appears without a reload */}
-        {SanityLive && <SanityLive />}
-        {/* click-to-edit outlines, only inside the Studio's preview */}
+        {/* Studio preview only: drafts appear as the editor types, with click-to-edit outlines */}
+        {preview && SanityLive && <SanityLive />}
         {preview && <VisualEditing />}
       </body>
     </html>

@@ -2,9 +2,9 @@ import 'server-only'
 import { defineLive } from 'next-sanity/live'
 import { client } from './client'
 
-/* Live content: published changes appear on the site within seconds, and
-   inside the Studio's preview ("Presentation") editors see their drafts as
-   they type, with click-to-edit outlines on the texts.
+/* Live content for the Studio's preview ("Presentation"): editors see their
+   drafts as they type, with click-to-edit outlines on the texts. (Visitors
+   get published content through content.ts, refreshed by /api/revalidate.)
 
    Click-to-edit works by hiding invisible markers in texts while previewing.
    Only plain display texts get them (the list below); ids, links, colours,
