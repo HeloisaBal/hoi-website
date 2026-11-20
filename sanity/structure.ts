@@ -30,4 +30,6 @@ export const structure: StructureResolver = (S) =>
       S.divider(),
       S.listItem().title('Contact & links').id('siteSettings')
         .child(S.document().schemaType('siteSettings').documentId('siteSettings').title('Contact & links')),
+      S.listItem().title('Chatbot').id('chatbot')
+        .child(S.document().schemaType('chatbot').documentId('chatbot').title('Chatbot')),
     ])

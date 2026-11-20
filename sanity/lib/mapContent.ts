@@ -1,5 +1,6 @@
 import { stegaClean } from 'next-sanity'
 import { defaultContent, type Photo, type SiteContent } from '@/components/site/content'
+import { FAQ_LIMITS } from '@/lib/chat/limits'
 import { CITIES, EVENT_COLOURS, demoHighlight, personas, type CityId, type EventColour, type PersonaId } from '@/components/site/data'
 
 /* Turns what Sanity returns into the site's content, with the built-in
@@ -29,7 +30,8 @@ export const QUERY = `{
   "team": *[_type == "teamMember"] | order(order asc, _createdAt asc){ name, role, "photoUrl": photo.asset->url, "photoAlt": photo.alt },
   "highlightCount": count(*[_type == "highlight"]),
   "highlight": *[_type == "highlight" && startAt <= now() && (!defined(endAt) || endAt > now())]
-    | order(priority desc, startAt desc)[0]{ "id": _id, title, label, text, link, linkText, "logoUrl": logo.asset->url, "logoAlt": logo.alt }
+    | order(priority desc, startAt desc)[0]{ "id": _id, title, label, text, link, linkText, "logoUrl": logo.asset->url, "logoAlt": logo.alt },
+  "chatbot": *[_id == "chatbot"][0]{ enabled, buttonLabel, title, greeting, suggestions, placeholder, disclaimer, contactIntro, contactPrivacy, contactThanks, contactButton, nameLabel, emailLabel, messageLabel, sendLabel, checkText, errorText, busyText, faq[]{ question, answer } }
 }`
 
 type Raw = Record<string, unknown>
@@ -77,6 +79,8 @@ function texts<T extends Record<string, unknown>>(raw: Raw, fallback: T, limits:
 export function mapContent(raw: Raw): SiteContent {
   const d = defaultContent
   const home = obj(raw.home)
+  const bot = obj(raw.chatbot)
+  const suggestions = strs(bot.suggestions, 60, 4)
   const sci = strs(home.scienceWords, 22, 8)
   const biz = strs(home.businessWords, 22, 8)
 
@@ -161,5 +165,21 @@ export function mapContent(raw: Raw): SiteContent {
         logoUrl, logoAlt: logoUrl ? str(h.logoAlt, 80) ?? '' : undefined,
       }
     })(),
+
+    chatbot: {
+      ...texts(bot, d.chatbot, {
+        buttonLabel: 20, title: 30, greeting: 220, placeholder: 40, disclaimer: 120,
+        contactIntro: 160, contactPrivacy: 200, contactThanks: 160, contactButton: 24,
+        nameLabel: 20, emailLabel: 20, messageLabel: 20, sendLabel: 16, checkText: 30, errorText: 140, busyText: 140,
+      }),
+      enabled: bot.enabled !== false, // on unless an editor switched it off
+      suggestions: suggestions.length ? suggestions : d.chatbot.suggestions,
+    },
+    // plain text only (stega markers removed: this goes to the AI, not into the page)
+    faq: list(bot.faq).flatMap((f) => {
+      const question = str(stegaClean(f.question), FAQ_LIMITS.question)
+      const answer = str(stegaClean(f.answer), FAQ_LIMITS.answer)
+      return question && answer ? [{ question, answer }] : []
+    }).slice(0, FAQ_LIMITS.count),
   }
 }

@@ -7,7 +7,7 @@ import { writeFileSync } from 'node:fs'
 import { defaultContent } from '../../components/site/content'
 import { EVENT_COLOURS, demoHighlight } from '../../components/site/data'
 
-const { home, eventsPage, settings } = defaultContent
+const { home, eventsPage, settings, chatbot } = defaultContent
 const colourOf = (gradient: string) =>
   Object.entries(EVENT_COLOURS).find(([, c]) => c.gradient === gradient)?.[0] ?? 'teal-blue'
 const omit = <T extends object>(o: T, keys: string[]) =>
@@ -32,6 +32,7 @@ const docs: Record<string, unknown>[] = [
   })),
   ...defaultContent.partners.map((p, i) => ({ _id: `partner-${i + 1}`, _type: 'partner', name: p.name, order: (i + 1) * 10 })),
   ...defaultContent.team.map((t, i) => ({ _id: `team-${i + 1}`, _type: 'teamMember', name: t.name, role: t.role, order: (i + 1) * 10 })),
+  { _id: 'chatbot', _type: 'chatbot', ...chatbot, faq: [] },
   {
     _id: 'highlight-tedx', _type: 'highlight', title: demoHighlight.title, label: demoHighlight.label,
     text: demoHighlight.text, link: demoHighlight.link, linkText: demoHighlight.linkText,

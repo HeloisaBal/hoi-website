@@ -46,6 +46,7 @@ export default defineConfig({
           journeyStage: defineLocations({ locations: [home] }),
           partner: defineLocations({ locations: [home] }),
           teamMember: defineLocations({ locations: [home] }),
+          chatbot: defineLocations({ locations: [home, eventsPage] }),
         },
       },
     }),
