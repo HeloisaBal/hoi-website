@@ -15,6 +15,7 @@ import { LogoWindow } from './LogoWindow'
 import { FounderJourney } from './FounderJourney'
 import { OffersSection } from './OffersSection'
 import { WhoWeAre } from './WhoWeAre'
+import { EventsMarquee } from './EventsMarquee'
 import { ParallaxShapes } from './ParallaxShapes'
 import { ScienceBusiness } from './ScienceBusiness'
 import { PathWorld } from './PathWorld'
@@ -324,6 +325,9 @@ export function HoiHome() {
       <FounderJourney persona={persona} />
 
       <ScienceBusiness />
+
+      {/* ================= hoi's events, as one moving banner among many sections ================= */}
+      <EventsMarquee />
 
       {/* ================= PEOPLE ================= */}
       <section id="about" className="container-x pt-28">

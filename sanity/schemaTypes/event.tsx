@@ -23,6 +23,10 @@ export const event = defineType({
       description: 'Leave empty to keep it off the map.',
     }),
     link('link', 'More info link (optional)'),
+    defineField({
+      name: 'onHomepage', title: 'Show on the homepage', type: 'boolean', initialValue: true,
+      description: 'In the moving events banner on the homepage. Switch off to only show it on the events page.',
+    }),
     defineField({ name: 'date', title: 'Date (for the order)', type: 'date', description: 'Events are shown soonest first. Undated ones come last.' }),
     defineField({ name: 'hideAfter', title: 'Hide after (optional)', type: 'datetime', description: 'Removes it from the site automatically.' }),
   ],

@@ -22,7 +22,7 @@ export const QUERY = `{
   "personas": *[_type == "persona"]{ "key": _id, chip, plural, word, headline, line, cta, pathLabel, pathText },
   "eventCount": count(*[_type == "event"]),
   "events": *[_type == "event" && (!defined(hideAfter) || hideAfter > now())]
-    | order(coalesce(date, "9999-12-31") asc, _createdAt asc){ "id": _id, title, partner, label, details, colour, for, city, link },
+    | order(coalesce(date, "9999-12-31") asc, _createdAt asc){ "id": _id, title, partner, label, details, colour, for, city, link, onHomepage },
   "offerCount": count(*[_type == "offer"]),
   "offers": *[_type == "offer"] | order(order asc, _createdAt asc){ "id": _id, name, tagline, text, points, for },
   "journeyCount": count(*[_type == "journeyStage"]),
@@ -134,6 +134,7 @@ export function mapContent(raw: Raw): SiteContent {
           for: personaKeys(e.for),
           city: city in CITIES ? city : undefined,
           link: safeLink(e.link),
+          onHomepage: e.onHomepage !== false,
         }]
       })
       : d.events,

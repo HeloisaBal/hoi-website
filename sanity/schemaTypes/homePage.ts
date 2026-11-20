@@ -43,9 +43,9 @@ export const homePage = defineType({
     text('whoTitle', 'Title', 50, { group: 'who' }),
     text('whoText', 'Text', 320, { group: 'who', rows: 4 }),
     words('whoPoints', 'Key points', 4, 50, { group: 'who', description: 'Up to 4 short points shown next to the text.' }),
-    text('eventsEyebrow', 'Small label', 25, { group: 'events' }),
-    text('eventsTitle', 'Title', 40, { group: 'events', description: 'When a visitor picked who they are, it says “Next up for founders” etc.' }),
-    text('eventsMarquee', 'Big moving text behind the cards', 90, { group: 'events' }),
+    text('eventsEyebrow', 'Events banner: small label', 25, { group: 'events' }),
+    text('eventsTitle', 'Events banner: title', 40, { group: 'events', description: 'Above the moving row of events. Which events show is set per event (“Show on the homepage”).' }),
+    text('eventsMarquee', 'Events banner: moving text ribbon', 90, { group: 'events', description: 'Runs across the screen above the event cards. Use “·” between phrases.' }),
 
     text('journeyEyebrow', 'Small label', 25, { group: 'journey' }),
     text('journeyTitle', 'Title', 40, { group: 'journey', description: 'The stages themselves are under “Journey stages”.' }),

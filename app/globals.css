@@ -1228,3 +1228,34 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 .who-points { display: grid; gap: .75rem; }
 .who-points li { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; border-radius: 1.1rem; background: var(--tint); font-weight: 700; color: var(--color-ink); }
 .who-num { font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--accent); }
+
+/* ------------------------------------------------------------
+   Events banner (EventsMarquee.tsx): an endless row of event cards
+   plus a ribbon of text going the other way. Pauses on hover and
+   keyboard focus; still for reduced motion.
+   ------------------------------------------------------------ */
+.em-ribbon { margin-top: 2.2rem; overflow: hidden; background: var(--color-ink); color: #fff; rotate: -1.5deg; scale: 1.03; }
+.em-ribbon-track { display: flex; width: max-content; animation: em-left 40s linear infinite reverse; }
+.em-ribbon-track span { padding: .8rem 1.5rem; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.1rem, 2.4vw, 1.6rem); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.em-viewport { margin-top: 2rem; overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.em-track { display: flex; gap: 1rem; width: max-content; padding: .5rem 0 1.5rem; animation: em-left var(--em-duration, 40s) linear infinite; }
+.em-viewport:hover .em-track, .em-viewport:focus-within .em-track { animation-play-state: paused; }
+.em-item { flex: none; }
+.em-card {
+  position: relative; display: flex; flex-direction: column; width: 18.5rem; min-height: 13rem; padding: 1.2rem 1.25rem; border-radius: 1.3rem; color: #fff;
+  box-shadow: 0 18px 36px -22px rgb(23 10 43 / .55); transition: transform .3s ease;
+}
+a.em-card:hover { transform: translateY(-5px) rotate(-1deg); }
+a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3px; }
+.em-partner { align-self: flex-start; padding: .15rem .55rem; border: 1.5px solid rgb(255 255 255 / .8); border-radius: .4rem; font-size: .8rem; font-weight: 700; }
+.em-label { margin-top: auto; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .85; }
+.em-title { margin-top: .35rem; font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 1.35rem; line-height: 1; hyphens: auto; }
+.em-meta { margin-top: .6rem; font-size: .85rem; opacity: .9; }
+.em-go { position: absolute; top: 1rem; right: 1rem; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--color-ink); }
+@keyframes em-left { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .em-track, .em-ribbon-track { animation: none; }
+  .em-viewport { overflow-x: auto; -webkit-mask: none; mask: none; }
+  .em-track { padding-left: var(--gut, 1.25rem); }
+  .em-track > [aria-hidden='true'] { display: none; }
+}

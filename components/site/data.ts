@@ -139,6 +139,8 @@ export type HoiEvent = {
   city?: CityId
   /** optional page with more info or registration */
   link?: string
+  /** in the moving events banner on the homepage (off: events page only) */
+  onHomepage?: boolean
 }
 
 export const events: HoiEvent[] = [
