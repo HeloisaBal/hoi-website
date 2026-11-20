@@ -16,6 +16,7 @@ import { FounderJourney } from './FounderJourney'
 import { OffersSection } from './OffersSection'
 import { WhoWeAre } from './WhoWeAre'
 import { EventsMarquee } from './EventsMarquee'
+import { WaveBridge } from './WaveBridge'
 import { ParallaxShapes } from './ParallaxShapes'
 import { ScienceBusiness } from './ScienceBusiness'
 import { PathWorld } from './PathWorld'
@@ -316,7 +317,11 @@ export function HoiHome() {
       </section>
 
       {/* ================= the heart of the site: what hoi offers, for this visitor first ================= */}
-      <OffersSection persona={persona} plural={current?.plural} />
+      {/* the waves in the path's colours, then the offers slide up over them */}
+      <WaveBridge />
+      <div className="after-waves">
+        <OffersSection persona={persona} plural={current?.plural} />
+      </div>
 
       {/* ================= who hoi is ================= */}
       <WhoWeAre />
