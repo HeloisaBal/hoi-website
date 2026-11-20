@@ -724,7 +724,7 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
    so the full-colour screen only shows briefly */
 @media (prefers-reduced-motion: no-preference) {
   .event-stack + .journey, .event-stack + .harbour { position: relative; z-index: 25; margin-top: -60vh; background: var(--tint); transition: background-color .6s ease; }
-  .event-stack + .journey::before, .event-stack + .harbour::before, .wave-bridge + .after-waves::before {
+  .event-stack + .journey::before, .event-stack + .harbour::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: clamp(70px, 12vh, 140px);
     background: var(--tint); pointer-events: none;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,62 C18,28 34,28 50,58 S82,96 100,42 L100,100 L0,100 Z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
@@ -1265,18 +1265,22 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
    --warm (0..1, set while scrolling) mixes the path colour into the
    background. The waves reuse .event-stack-band / .band-1..4.
    ------------------------------------------------------------ */
-/* the stage starts on top of the hero (pulled up one screen) and stays pinned:
-   the waves rise over the map as it scrolls away, then stack one by one */
-.wave-bridge { position: relative; z-index: 20; height: 340vh; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
+/* Same logic as the GroundUp showcase: the stage is pulled up over the last
+   screen of the hero and stays pinned while four bands rise and overlap.
+   The fourth band has the offers' background colour, so the offers continue
+   straight from it. Height = the screen it overlaps + the rise (1.1 screens) + a little hold. */
+.wave-bridge { position: relative; z-index: 20; height: 225vh; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: transparent;
 }
-.wave-bridge-band { height: 150%; transform: translate3d(0, 110vh, 0); }
-@media (prefers-reduced-motion: no-preference) {
-  .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -25vh; background: var(--tint); }
-}
+.wave-bridge-band { height: 130%; transform: translate3d(0, 110vh, 0); }
+.wave-bridge-band-1 { color: var(--c1); }
+.wave-bridge-band-2 { color: var(--c2); }
+.wave-bridge-band-3 { color: var(--c3); }
+.wave-bridge-band-4 { color: var(--tint); }
+.wave-bridge + .after-waves { position: relative; z-index: 25; background: var(--tint); }
 @media (prefers-reduced-motion: reduce) { .wave-bridge { display: none; } }
 
 /* Offers and "Who we are": entrance effects (set by useInView) */

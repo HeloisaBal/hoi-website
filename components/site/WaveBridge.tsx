@@ -4,26 +4,26 @@ import { useRef } from 'react'
 import { clamp, motionAllowed, useScrollFrame } from './useScrollFrame'
 
 /*
-  The wave moment between the hero and the offers.
-  The stage sits over the hero and stays pinned while you scroll: the
-  waves rise from the bottom one after another and stack on top of each
-  other, like the original event-stack effect. The first wave never
-  drops below the bottom of the hero, so there is no empty gap.
+  The wave moment between the hero and the offers, with the same logic as
+  the GroundUp showcase ("wave bands rise and hand over"):
+  - a pinned stage sits over the end of the hero;
+  - four bands rise from the bottom, one shortly after another, so
+    several are moving at once and the screen is never one flat colour;
+  - they settle as stacked stripes, and the last band has the colour of
+    the next section, so the offers simply continue from it.
 */
 
 const WAVES = [
-  'M0,22 C16,2 34,2 50,18 S84,38 100,8 L100,100 L0,100 Z',
-  'M0,10 C18,32 40,32 56,14 S86,0 100,22 L100,100 L0,100 Z',
-  'M0,24 C24,0 46,4 62,20 S88,36 100,10 L100,100 L0,100 Z',
+  'M0,16 C20,0 35,0 50,13 S80,29 100,10 L100,100 L0,100 Z',
+  'M0,10 C20,26 40,26 55,13 S85,0 100,16 L100,100 L0,100 Z',
+  'M0,16 C25,0 45,3 60,14 S85,26 100,10 L100,100 L0,100 Z',
+  'M0,11 C18,24 38,24 52,11 S84,0 100,14 L100,100 L0,100 Z',
 ]
-// where each wave's box settles, as a share of the screen height (the wave line itself
-// sits a little lower, inside the box)
-const WAVE_STOP = [-0.45, 0.1, 0.42]
-// when each wave starts rising (share of the pinned scroll) and how long it takes
-const WAVE_START = [0, 0.34, 0.6]
-const WAVE_LENGTH = 0.3
+// where each band settles (translateY in % of its own height), as in the showcase
+const BAND_STOP = [-6, 19.2, 38.5, 57.7]
+// how much scroll the rise takes, in screen heights
+const WAVE_DIST = 1.1
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export function WaveBridge() {
@@ -34,19 +34,19 @@ export function WaveBridge() {
     const section = sectionRef.current
     if (!section || !motionAllowed()) return
     const vh = window.innerHeight
-    const r = section.getBoundingClientRect()
-    const p = clamp(-r.top / Math.max(1, r.height - vh), 0, 1)
     const hero = section.previousElementSibling as HTMLElement | null
-    const heroBottom = hero ? hero.getBoundingClientRect().bottom : vh
-    // the stage's own top on screen (0 while pinned)
-    const pinTop = Math.max(0, r.top)
+    const heroBottom = hero ? hero.getBoundingClientRect().bottom : section.getBoundingClientRect().top + vh
+    const pinTop = Math.max(0, section.getBoundingClientRect().top)
+    // 0 when the end of the hero is near the bottom of the screen, 1 once the stack is complete
+    const wp = clamp((vh * 0.92 - heroBottom) / (vh * WAVE_DIST), 0, 1)
 
     bandRefs.current.forEach((band, k) => {
       if (!band) return
-      const t = easeOut(clamp((p - WAVE_START[k]) / WAVE_LENGTH, 0, 1))
-      let top = lerp(vh * 1.05, vh * WAVE_STOP[k], t)
-      // the first wave follows the hero up, so nothing blank shows under it
-      if (k === 0) top = Math.min(top, Math.max(heroBottom, vh * WAVE_STOP[0]))
+      const e = easeOut(clamp((wp - k * 0.14) / 0.58, 0, 1))
+      const h = band.offsetHeight
+      let top = (h * (110 + (BAND_STOP[k] - 110) * e)) / 100 + pinTop
+      // the first band never drops below the end of the hero, so nothing blank shows
+      if (k === 0) top = Math.min(top, Math.max(heroBottom, (h * BAND_STOP[0]) / 100))
       band.style.transform = `translate3d(0, ${(top - pinTop).toFixed(1)}px, 0)`
     })
   })
@@ -60,7 +60,7 @@ export function WaveBridge() {
             ref={(el) => {
               bandRefs.current[k] = el
             }}
-            className={`event-stack-band wave-bridge-band band-${k + 1}`}
+            className={`event-stack-band wave-bridge-band wave-bridge-band-${k + 1}`}
             style={{ zIndex: 20 + k }}
           >
             <svg viewBox="0 0 100 100" preserveAspectRatio="none">
