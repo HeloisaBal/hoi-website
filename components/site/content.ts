@@ -25,6 +25,11 @@ export type HomeTexts = {
   generalHeadline: string
   generalLine: string
   generalCta: string
+  ticketLabel: string
+  ticketPassenger: string
+  ticketRoute: string
+  ticketGuest: string
+  ticketOpenRoute: string
   rememberLabel: string
   heroPhoto: Photo
   eventsEyebrow: string
@@ -131,6 +136,11 @@ export const defaultContent: SiteContent = {
     generalHeadline: 'Where science meets business in the Northwest.',
     generalLine: 'hoi connects startups with business and science across Bremen, Oldenburg and the whole Northwest.',
     generalCta: 'Choose your path',
+    ticketLabel: 'Boarding pass · Harbour of ideas',
+    ticketPassenger: 'Passenger',
+    ticketRoute: 'Route',
+    ticketGuest: 'Guest',
+    ticketOpenRoute: 'Open ticket',
     rememberLabel: 'Remember me on this device',
     heroPhoto: { url: '/photos/hoi-team.jpg', alt: 'The hoi startup factory team in front of a hoi flag' },
     eventsEyebrow: 'What’s on',

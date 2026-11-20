@@ -74,7 +74,8 @@ export function HoiHome() {
   const heroHeadline = current?.headline ?? home.generalHeadline
   const heroLine = current?.line ?? home.generalLine
   const theme = current?.theme ?? DEFAULT_THEME
-  const firstName = name.trim().split(/\s+/)[0] ?? ''
+  const rawFirst = name.trim().split(/\s+/)[0] ?? ''
+  const firstName = rawFirst.charAt(0).toLocaleUpperCase() + rawFirst.slice(1)
 
   function heroCentre() {
     const c = centreOf(heroRef.current)
@@ -281,38 +282,53 @@ export function HoiHome() {
               </div>
             )}
 
-            {/* ---------- STEP 3: their page: centred and to the point, the programme button first ---------- */}
+            {/* ---------- STEP 3: their boarding pass to the harbour of ideas; the stub is the one thing to click ---------- */}
             {step === 'done' && (
-              <div key={`done-${persona ?? 'all'}`} className="hero-centre flex w-full flex-col items-center text-center">
-                <span className="hero-pill rise" style={rise(0)}>
-                  <span className="pill-dot" aria-hidden="true" />
-                  {current ? `For ${current.plural}` : home.heroPill}
-                </span>
-                <h1 className="rise mx-auto mt-7 max-w-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
-                  style={{ ...rise(1), ...fit(heroHeadline, 'var(--hero-h1)', '2.75rem') }}>
-                  {(() => {
-                    const [a, b] = splitHeadline(heroHeadline)
-                    return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
-                  })()}
-                </h1>
-                <p className="rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(2)}>
-                  {firstName && <span className="font-semibold text-ink">{returning ? `Welcome back, ${firstName}. ` : `Hoi ${firstName}! `}</span>}
-                  {heroLine}
-                </p>
-                <div className="rise mt-10" style={rise(3)}>
+              <div key={`done-${persona ?? 'all'}`} className="flex w-full flex-col items-center">
+                <article className="ticket rise" style={rise(0)} aria-labelledby="ticket-title">
+                  <div className="ticket-main">
+                    <p className="ticket-kicker">
+                      <span className="pill-dot" aria-hidden="true" />
+                      {home.ticketLabel}
+                    </p>
+                    <h1 id="ticket-title" className="ticket-title">
+                      {(() => {
+                        const [a, b] = splitHeadline(heroHeadline)
+                        return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
+                      })()}
+                    </h1>
+                    <p className="ticket-line">
+                      {firstName && returning && <span className="font-semibold text-ink">{`Welcome back, ${firstName}. `}</span>}
+                      {heroLine}
+                    </p>
+                    <dl className="ticket-meta">
+                      <div>
+                        <dt>{home.ticketPassenger}</dt>
+                        <dd>{firstName || home.ticketGuest}</dd>
+                      </div>
+                      <div>
+                        <dt>{home.ticketRoute}</dt>
+                        <dd>{current ? current.pathLabel : home.ticketOpenRoute}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
                   {current ? (
-                    <a href="#programmes" className="btn-primary group h-16 gap-2 px-9 text-lg sm:text-xl">
-                      {current.cta}
-                      <Arrow />
+                    <a href="#programmes" className="ticket-stub group">
+                      <span className="ticket-stub-label">{current.cta}</span>
+                      <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
+                      <span className="ticket-barcode" aria-hidden="true" />
                     </a>
                   ) : (
-                    <button type="button" onClick={() => setStep('persona')} className="btn-primary group h-16 gap-2 px-9 text-lg sm:text-xl">
-                      {home.generalCta}
-                      <Arrow />
+                    <button type="button" onClick={() => setStep('persona')} className="ticket-stub group">
+                      <span className="ticket-stub-label">{home.generalCta}</span>
+                      <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
+                      <span className="ticket-barcode" aria-hidden="true" />
                     </button>
                   )}
-                </div>
-                <div className="rise mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted" style={rise(4)}>
+                </article>
+
+                <div className="rise mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted" style={rise(2)}>
                   {current && (
                     <button type="button" onClick={() => setStep('persona')}
                       className="underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">

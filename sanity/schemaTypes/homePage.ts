@@ -24,6 +24,11 @@ export const homePage = defineType({
     text('generalHeadline', 'Hero for visitors who skip: headline', 60, { group: 'intro', description: 'For visitors who click “Just looking around”. The last words get the colour gradient.' }),
     text('generalLine', 'Hero for visitors who skip: text', 160, { group: 'intro', rows: 2 }),
     text('generalCta', 'Hero for visitors who skip: button', 28, { group: 'intro', description: 'Opens the path choice again.' }),
+    text('ticketLabel', 'Boarding pass: small label at the top', 40, { group: 'intro', description: 'The hero after a visitor picks a path looks like a boarding pass.' }),
+    text('ticketPassenger', 'Boarding pass: “Passenger” label', 16, { group: 'intro' }),
+    text('ticketRoute', 'Boarding pass: “Route” label', 16, { group: 'intro', description: 'The route shows the path title, e.g. “Investor”.' }),
+    text('ticketGuest', 'Boarding pass: passenger without a name', 16, { group: 'intro' }),
+    text('ticketOpenRoute', 'Boarding pass: route for visitors who skipped', 20, { group: 'intro' }),
     photo('heroPhoto', 'Hero: photo in the house shape', { group: 'intro', description: 'Shown after a visitor picks who they are. Portrait photos work best.' }),
 
     text('eventsEyebrow', 'Small label', 25, { group: 'events' }),
