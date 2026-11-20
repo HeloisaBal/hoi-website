@@ -1265,17 +1265,17 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
    --warm (0..1, set while scrolling) mixes the path colour into the
    background. The waves reuse .event-stack-band / .band-1..4.
    ------------------------------------------------------------ */
-.wave-bridge { position: relative; height: 260vh; }
+/* the stage starts on top of the hero (pulled up one screen) and stays pinned:
+   the waves rise over the map as it scrolls away, then stack one by one */
+.wave-bridge { position: relative; z-index: 20; height: 340vh; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
-  background: transparent; /* the hero's background shows through above the first wave: no seam */
+  background: transparent;
 }
-/* pulled up under the empty space below the boarding pass, so the waves start right after it */
-.wave-bridge { margin-top: -18vh; }
-.wave-bridge-band { height: 150%; }
+.wave-bridge-band { height: 150%; transform: translate3d(0, 110vh, 0); }
 @media (prefers-reduced-motion: no-preference) {
-  .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -20vh; background: var(--tint); }
+  .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -25vh; background: var(--tint); }
 }
 @media (prefers-reduced-motion: reduce) { .wave-bridge { display: none; } }
 
