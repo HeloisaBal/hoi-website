@@ -31,7 +31,7 @@ function webglAvailable() {
 export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, bottom }: {
   paths: Persona[]
   top: ReactNode
-  bottom: ReactNode
+  bottom?: ReactNode
   selected: PersonaId | null
   hint: string
   /** label next to the hoi cursor over an island */

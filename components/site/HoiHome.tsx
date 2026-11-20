@@ -70,7 +70,6 @@ export function HoiHome() {
 
   const current = personas.find((p) => p.id === persona) ?? null
   const mainPaths = MAIN_PATHS.flatMap((id) => personas.filter((p) => p.id === id))
-  const morePaths = personas.filter((p) => !MAIN_PATHS.includes(p.id))
   const heroHeadline = current?.headline ?? home.generalHeadline
   const heroLine = current?.line ?? home.generalLine
   const theme = current?.theme ?? DEFAULT_THEME
@@ -122,14 +121,6 @@ export function HoiHome() {
       const c = heroCentre()
       burst(c.x, c.y, [p.theme.c1, p.theme.c2, p.theme.c3, p.theme.accent], 48)
     }, 900)
-  }
-
-  /* "Just looking around": the general hero, no personalisation */
-  function skipPath() {
-    setPersona(null)
-    setReturning(false)
-    if (load(KEY_REMEMBER) === '1') save(KEY_PERSONA, null)
-    setStep('done')
   }
 
   function forget() {
@@ -199,24 +190,7 @@ export function HoiHome() {
                 </p>
               </div>
             }
-            bottom={
-              <div className="path-more">
-                {morePaths.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <span className="text-sm font-medium text-ink">{home.pathMore}</span>
-                    {morePaths.map((p) => (
-                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e.currentTarget)} aria-pressed={persona === p.id} className="chip">
-                        {p.pathLabel}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button type="button" onClick={skipPath}
-                  className="text-sm font-medium text-ink underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
-                  {home.pathSkip}
-                </button>
-              </div>
-            } />
+            bottom={null} />
         )}
 
         {step !== 'persona' && (
