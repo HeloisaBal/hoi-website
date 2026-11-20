@@ -16,7 +16,7 @@ import { FounderJourney } from './FounderJourney'
 import { NextEvents } from './NextEvents'
 import { ParallaxShapes } from './ParallaxShapes'
 import { ScienceBusiness } from './ScienceBusiness'
-import { HarbourMap } from './HarbourMap'
+import { PathWorld } from './PathWorld'
 import { DotField } from './DotField'
 
 /* Landing: 1. pick a path (or skip), 2. optional first name, 3. the hero for that path */
@@ -104,9 +104,9 @@ export function HoiHome() {
   }
 
   /* step 2 → 3: who they are. The page turns their colour. */
-  function pick(id: PersonaId, e: React.MouseEvent<HTMLButtonElement>) {
+  function pick(id: PersonaId, from: Element | { x: number; y: number }) {
     const p = personas.find((x) => x.id === id)!
-    const { x, y } = centreOf(e.currentTarget)
+    const { x, y } = from instanceof Element ? centreOf(from) : from
     const apply = () => {
       setPersona(id)
       setReturning(false)
@@ -246,29 +246,21 @@ export function HoiHome() {
                 <span className="hero-pill rise" style={rise(0)}>
                   <span className="pill-dot" aria-hidden="true" />{home.heroPill}
                 </span>
-                <h1 className="rise mt-8 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
-                  style={{ ...rise(1), fontSize: 'clamp(3.4rem, 10vw, 8.5rem)' }}>
+                {/* smaller than the name step: the world below is the star here */}
+                <h1 className="rise mt-6 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
+                  style={{ ...rise(1), fontSize: 'clamp(2.6rem, 6vw, 4.75rem)' }}>
                   Hoi! <WaveHand />
                 </h1>
-                <p id="path-question" className="rise mt-6 font-display text-2xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]" style={rise(2)}>
+                <p id="path-question" className="rise mt-4 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-[1.6rem]" style={rise(2)}>
                   {home.pathPrompt}
                 </p>
-                <div role="group" aria-labelledby="path-question" className="path-grid mt-10 w-full">
-                  {mainPaths.map((p, i) => (
-                    <button key={p.id} type="button" onClick={(e) => pick(p.id, e)} aria-pressed={persona === p.id}
-                      className="path-card rise group" style={{ ...rise(3 + i * 0.5), ...themeVars(p.theme) }}>
-                      <span className="path-word" aria-hidden="true">{p.word}</span>
-                      <span className="path-label">{p.pathLabel}</span>
-                      <span className="path-text">{p.pathText}</span>
-                      <span className="path-go" aria-hidden="true"><Arrow /></span>
-                    </button>
-                  ))}
-                </div>
+                <PathWorld paths={mainPaths} selected={persona} hint={home.pathHint} cursorLabel={home.cursorSail}
+                  onChoose={(id, from) => pick(id, from)} />
                 {morePaths.length > 0 && (
                   <div className="rise mt-8 flex flex-wrap items-center justify-center gap-2.5" style={rise(5)}>
                     <span className="text-sm font-medium text-muted">{home.pathMore}</span>
                     {morePaths.map((p) => (
-                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e)} aria-pressed={persona === p.id} className="chip">
+                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e.currentTarget)} aria-pressed={persona === p.id} className="chip">
                         {p.pathLabel}
                       </button>
                     ))}
@@ -314,13 +306,13 @@ export function HoiHome() {
                   </div>
 
                   {current ? (
-                    <a href="#programmes" className="ticket-stub group">
+                    <a href="#programmes" className="ticket-stub group" data-cursor={home.cursorGo}>
                       <span className="ticket-stub-label">{current.cta}</span>
                       <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
                       <span className="ticket-barcode" aria-hidden="true" />
                     </a>
                   ) : (
-                    <button type="button" onClick={() => setStep('persona')} className="ticket-stub group">
+                    <button type="button" onClick={() => setStep('persona')} className="ticket-stub group" data-cursor={home.cursorGo}>
                       <span className="ticket-stub-label">{home.generalCta}</span>
                       <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
                       <span className="ticket-barcode" aria-hidden="true" />
@@ -352,9 +344,6 @@ export function HoiHome() {
       <FounderJourney persona={persona} />
 
       <ScienceBusiness />
-
-      {/* ================= S6: the 3D harbour map ================= */}
-      <HarbourMap />
 
       {/* ================= EVENTS: hoi's own next events, one element among many ================= */}
       <NextEvents events={sortedEvents} persona={persona} plural={current?.plural} />

@@ -3,6 +3,7 @@ import { Archivo, Inter } from 'next/font/google'
 import './globals.css'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
+import { HoiCursor } from '@/components/site/HoiCursor'
 import { SectionJump } from '@/components/site/SectionJump'
 import { SanityLive } from '@/sanity/lib/live'
 
@@ -34,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {children}
         <SectionJump />
+        <HoiCursor />
         {/* Studio preview only: drafts appear as the editor types, with click-to-edit outlines */}
         {preview && SanityLive && <SanityLive />}
         {preview && <VisualEditing />}

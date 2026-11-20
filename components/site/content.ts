@@ -22,6 +22,9 @@ export type HomeTexts = {
   pathPrompt: string
   pathMore: string
   pathSkip: string
+  pathHint: string
+  cursorSail: string
+  cursorGo: string
   generalHeadline: string
   generalLine: string
   generalCta: string
@@ -133,6 +136,9 @@ export const defaultContent: SiteContent = {
     pathPrompt: 'Which path brings you here?',
     pathMore: 'Researcher or student? Start here:',
     pathSkip: 'Just looking around',
+    pathHint: 'Drag to look around · pick your island',
+    cursorSail: 'Set sail',
+    cursorGo: 'Let’s go',
     generalHeadline: 'Where science meets business in the Northwest.',
     generalLine: 'hoi connects startups with business and science across Bremen, Oldenburg and the whole Northwest.',
     generalCta: 'Choose your path',

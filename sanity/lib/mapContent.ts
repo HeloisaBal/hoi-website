@@ -100,7 +100,7 @@ export function mapContent(raw: Raw): SiteContent {
     },
     home: {
       ...texts(home, d.home, {
-        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, generalHeadline: 60, generalLine: 160, generalCta: 28, ticketLabel: 40, ticketPassenger: 16, ticketRoute: 16, ticketGuest: 16, ticketOpenRoute: 20, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
+        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, pathHint: 50, cursorSail: 16, cursorGo: 16, generalHeadline: 60, generalLine: 160, generalCta: 28, ticketLabel: 40, ticketPassenger: 16, ticketRoute: 16, ticketGuest: 16, ticketOpenRoute: 20, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
         journeyEyebrow: 25, journeyTitle: 40, mapEyebrow: 25, mapTitle: 40, mapText: 140, sbEyebrow: 25, sbTitle: 40,
         aboutEyebrow: 25, quote: 160, quoteBy: 70, aboutLinkText: 30, partnersTitle: 70, contactTitle: 40, contactText: 140, contactButton: 24,
       }),

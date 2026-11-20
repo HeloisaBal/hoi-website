@@ -1135,3 +1135,60 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
   .path-word { font-size: 3.6rem; }
 }
 @media (prefers-reduced-motion: reduce) { .path-card { transition: none; } .path-card:hover { transform: none; } }
+
+/* ------------------------------------------------------------
+   Landing: the 3D path world (PathWorld.tsx). The pins are the
+   buttons; each carries its persona colours as CSS variables.
+   ------------------------------------------------------------ */
+.path-world { position: relative; width: min(100%, 72rem); height: clamp(420px, 60vh, 640px); margin-top: 1.25rem; border-radius: 2rem; overflow: hidden; }
+.path-world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .6s ease; }
+.path-world.is-ready .path-world-canvas { opacity: 1; }
+.path-world-labels { position: absolute; inset: 0; pointer-events: none; }
+.path-pin {
+  position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; grid-template-columns: 1fr auto; column-gap: .65rem; align-items: center;
+  max-width: 15rem; padding: .7rem .7rem .7rem 1rem; border-radius: 1.1rem; text-align: left; color: #fff;
+  background: linear-gradient(150deg, var(--c1), var(--c2) 60%, var(--c3));
+  box-shadow: 0 14px 30px -14px var(--c3); transition: box-shadow .25s ease, scale .25s ease;
+}
+.path-pin::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; background: var(--c3); border-radius: 2px; }
+.path-world:not(.is-ready) .path-pin { top: 50%; transform: translate(-50%, -50%); }
+.path-world:not(.is-ready) .path-pin[data-slot='0'] { left: 20%; }
+.path-world:not(.is-ready) .path-pin[data-slot='1'] { left: 50%; top: 30%; }
+.path-world:not(.is-ready) .path-pin[data-slot='2'] { left: 80%; }
+.path-pin.is-hot, .path-pin:hover { scale: 1.06; box-shadow: 0 20px 40px -14px var(--c3); }
+.path-pin:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 4px; }
+.path-pin[aria-pressed='true'] { outline: 3px solid var(--color-ink); outline-offset: 3px; }
+.path-pin-label { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 1.05rem; line-height: 1; letter-spacing: -.01em; }
+.path-pin-text { grid-column: 1; margin-top: .3rem; font-size: .78rem; line-height: 1.3; color: rgb(255 255 255 / .88); }
+.path-pin-go { grid-column: 2; grid-row: 1 / span 2; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--accent); }
+.path-world-hint { position: absolute; left: 50%; bottom: .9rem; translate: -50% 0; padding: .35rem .8rem; border-radius: 999px; font-size: .78rem; font-weight: 600; color: var(--color-muted); background: rgb(255 255 255 / .75); white-space: nowrap; pointer-events: none; }
+@media (max-width: 767px) {
+  .path-world { height: min(78svh, 640px); border-radius: 1.5rem; }
+  .path-pin { max-width: 11rem; padding: .55rem .55rem .55rem .8rem; }
+  .path-pin-label { font-size: .92rem; }
+  .path-pin-text { display: none; }
+  .path-pin-go { width: 1.8rem; height: 1.8rem; }
+}
+
+/* ------------------------------------------------------------
+   The hoi cursor (HoiCursor.tsx), mouse only. The arrow is a plain
+   CSS cursor; over [data-cursor] a sailboat with a label follows the
+   mouse and the system cursor hides. Not in the Studio (/studio).
+   ------------------------------------------------------------ */
+@media (hover: hover) and (pointer: fine) {
+  .has-hoi-cursor body { cursor: url('/cursor-hoi.svg') 4 3, auto; }
+  .has-hoi-cursor a, .has-hoi-cursor button, .has-hoi-cursor [role='button'], .has-hoi-cursor label[for], .has-hoi-cursor summary { cursor: url('/cursor-hoi-link.svg') 4 3, pointer; }
+  .has-hoi-cursor input, .has-hoi-cursor textarea { cursor: text; }
+  .has-hoi-cursor [data-cursor], .has-hoi-cursor [data-cursor] * { cursor: none; }
+}
+.path-world[data-cursor] { cursor: pointer; }
+.hoi-cursor {
+  position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  margin: -24px 0 0 -24px; opacity: 0; scale: .6; transition: opacity .18s ease, scale .25s cubic-bezier(.3,1.6,.5,1);
+}
+.hoi-cursor.is-on { opacity: 1; scale: 1; }
+.hoi-cursor-boat { width: 48px; height: 48px; filter: drop-shadow(0 6px 10px rgb(23 10 43 / .25)); animation: boat-rock 2.4s ease-in-out infinite; transform-origin: 50% 80%; }
+.hoi-cursor-label { padding: .2rem .55rem; border-radius: .4rem; background: #fff; color: var(--color-ink); font-size: .75rem; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgb(23 10 43 / .18); }
+.hoi-cursor-label:empty { display: none; }
+@keyframes boat-rock { 0%, 100% { rotate: -6deg; } 50% { rotate: 6deg; } }
+@media (prefers-reduced-motion: reduce) { .hoi-cursor-boat { animation: none; } .hoi-cursor { transition: none; } }
