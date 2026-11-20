@@ -1265,7 +1265,7 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
    --warm (0..1, set while scrolling) mixes the path colour into the
    background. The waves reuse .event-stack-band / .band-1..4.
    ------------------------------------------------------------ */
-.wave-bridge { position: relative; height: 200vh; }
+.wave-bridge { position: relative; height: 260vh; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;

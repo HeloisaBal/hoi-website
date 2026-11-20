@@ -36,12 +36,13 @@ export function WaveBridge() {
     // 0 when the section's top enters at the bottom of the screen, 1 at its end
     const r = section.getBoundingClientRect()
     const p = clamp((window.innerHeight - r.top) / r.height, 0, 1)
-    const waveP = clamp(p / 0.6, 0, 1) // all three are up by 60% of the way
+    const waveP = clamp(p / 0.75, 0, 1) // all three are up by 75% of the way
     bandRefs.current.forEach((band, k) => {
       if (!band) return
       // one after the other, all four in place before the offers arrive
-      // the first wave is already up when the section arrives, so it joins the hero without a gap
-      const t = k === 0 ? 1 : easeOut(clamp((waveP - (k - 1) * 0.3) / 0.5, 0, 1))
+      // one by one while scrolling: each wave rises in its own third, the first
+      // starting the moment the section appears
+      const t = easeOut(clamp((waveP - k / 3) * 3, 0, 1))
       band.style.transform = `translateY(${lerp(110, WAVE_STOP[k], t).toFixed(2)}%)`
     })
   })
