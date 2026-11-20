@@ -13,8 +13,9 @@ import { Arrow, fit, stegaClean } from './shared'
    screen readers and keyboards).
 
    Everything comes from Sanity: the events (Events → "Show on the
-   homepage"), the texts (Homepage → Events) and the event app link
-   (Contact & links). Reduced motion: a still row you can swipe.
+   homepage"), the texts (Homepage → Events), the event app link
+   (Contact & links) and the current announcement (Highlights), which
+   also pops up in the hero. Reduced motion: a still row you can swipe.
    ------------------------------------------------------------ */
 
 function Card({ ev, copy }: { ev: HoiEvent; copy?: boolean }) {
@@ -43,7 +44,7 @@ function Card({ ev, copy }: { ev: HoiEvent; copy?: boolean }) {
 }
 
 export function EventsMarquee() {
-  const { events, home, settings } = useContent()
+  const { events, home, settings, highlight } = useContent()
   const shown = events.filter((e) => e.onHomepage !== false)
   if (!shown.length) return null
   // short lists are repeated so the row is always wider than the screen
@@ -67,6 +68,23 @@ export function EventsMarquee() {
           </a>
         )}
       </div>
+
+      {highlight && (
+        <div className="container-x mt-8">
+          <div className="em-highlight">
+            {highlight.logoUrl && <img src={`${highlight.logoUrl}?h=64&fit=max&auto=format`} alt={highlight.logoAlt ?? ''} className="h-8 w-auto" />}
+            {highlight.label && <span className="em-highlight-label">{highlight.label}</span>}
+            <p className="em-highlight-title">{highlight.title}</p>
+            {highlight.text && <p className="em-highlight-text">{highlight.text}</p>}
+            {highlight.link && (
+              <a href={highlight.link} className="em-highlight-link group"
+                {...(highlight.link.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                {highlight.linkText ?? 'Find out more'} <Arrow />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {ribbon && (
         <div className="em-ribbon" aria-hidden="true">

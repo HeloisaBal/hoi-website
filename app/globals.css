@@ -1265,14 +1265,43 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
    --warm (0..1, set while scrolling) mixes the path colour into the
    background. The waves reuse .event-stack-band / .band-1..4.
    ------------------------------------------------------------ */
-.wave-bridge { position: relative; height: 300vh; }
+.wave-bridge { position: relative; height: 200vh; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
-  background: color-mix(in srgb, var(--c1) calc(var(--warm) * 38%), var(--tint));
+  background: transparent; /* the hero's background shows through above the first wave: no seam */
 }
+/* pulled up under the empty space below the boarding pass, so the waves start right after it */
+.wave-bridge { margin-top: -18vh; }
 .wave-bridge-band { height: 150%; }
 @media (prefers-reduced-motion: no-preference) {
   .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -20vh; background: var(--tint); }
 }
 @media (prefers-reduced-motion: reduce) { .wave-bridge { display: none; } }
+
+/* Offers and "Who we are": entrance effects (set by useInView) */
+@media (prefers-reduced-motion: no-preference) {
+  .offers-grid .offer-card { opacity: 0; transform: translateY(70px) rotate(calc((var(--i) - 2) * 1.6deg)) scale(.94); transition: opacity .6s ease, transform .8s cubic-bezier(.2,1.25,.35,1), box-shadow .3s ease; transition-delay: calc(var(--i) * 90ms); }
+  .offers-grid.is-in .offer-card { opacity: 1; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+  .who-card { opacity: 0; transform: translateY(40px); transition: opacity .6s ease, transform .7s cubic-bezier(.2,1,.3,1); }
+  .who-card.is-in { opacity: 1; transform: none; }
+  .who-points li { opacity: 0; transform: translateX(60px); transition: opacity .5s ease, transform .7s cubic-bezier(.2,1.3,.35,1); transition-delay: calc(250ms + var(--i) * 120ms); }
+  .who-card.is-in .who-points li { opacity: 1; transform: none; }
+}
+.offer-card { position: relative; transform-style: preserve-3d; }
+.offer-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s ease;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%); }
+.offer-card:hover::before { opacity: 1; }
+.offers-grid.is-in .offer-card:hover { transform: translateY(-6px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+
+/* the announcement inside "Next up at hoi" */
+.em-highlight { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: 1rem 1.25rem; border-radius: 1.25rem; color: #fff;
+  background: linear-gradient(120deg, var(--c3), var(--c2) 60%, var(--c1)); box-shadow: 0 18px 40px -24px var(--c3); }
+.em-highlight-label { padding: .2rem .6rem; border-radius: 999px; background: rgb(255 255 255 / .2); font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.em-highlight-title { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(1.1rem, 2vw, 1.4rem); line-height: 1.05; }
+.em-highlight-text { flex: 1 1 18rem; font-size: .95rem; opacity: .9; }
+.em-highlight-link { margin-left: auto; display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1rem; border-radius: 999px; background: #fff; color: var(--color-ink); font-weight: 700; font-size: .9rem; }
+/* the hero pop-up version of the announcement */
+.hl-card.is-pop { transform: translateY(40px) scale(.8) rotate(-4deg); transition: opacity .35s ease, transform .6s cubic-bezier(.3,1.6,.5,1); }
+.hl-card.is-pop.is-shown { transform: none; }
+@media (prefers-reduced-motion: reduce) { .hl-card.is-pop, .hl-card.is-pop.is-shown { transform: none; } }

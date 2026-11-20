@@ -6,8 +6,11 @@ import { Arrow } from './shared'
 
 /* ------------------------------------------------------------
    Floating announcement card (a partnership, a new programme, news).
-   Slides in at the bottom-left once the visitor has scrolled past the
-   first screen, so it never covers the hero, and steps aside again near
+   Two modes:
+   - popIn: pops up shortly after a section (the homepage hero) is on
+     screen, and goes away when the visitor scrolls past it.
+   - otherwise: slides in at the bottom-left once the visitor has
+     scrolled past the first screen. Both step aside near
    sections marked data-no-highlight while they are on screen (the 3D
    map, contact, footer). Content comes from Sanity
    ("Highlight"), or the demo in data.ts until Sanity is connected.
@@ -16,8 +19,12 @@ import { Arrow } from './shared'
 
 const KEY_HIDDEN = 'hoi.highlight.hidden'
 
-export function HighlightCard({ highlight, after = 1, afterSection }: {
+const POP_DELAY_MS = 1200
+
+export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
   highlight: Highlight | null
+  /** pop up while this section (CSS selector) is on screen, after a short moment */
+  popIn?: string
   /** how many screen heights to scroll before it appears */
   after?: number
   /** or: appear once this section (CSS selector) reaches the middle of the screen */
@@ -34,8 +41,22 @@ export function HighlightCard({ highlight, after = 1, afterSection }: {
     } catch { /* storage blocked: just show it */ }
   }, [highlight])
 
+  /* pop-up mode */
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (!popIn) return
+    const t = window.setTimeout(() => setReady(true), POP_DELAY_MS)
+    return () => { window.clearTimeout(t); setReady(false) }
+  }, [popIn])
+
   useEffect(() => {
     const check = () => {
+      if (popIn) {
+        const el = document.querySelector(popIn)
+        const r = el?.getBoundingClientRect()
+        setShown(!!r && ready && r.bottom > window.innerHeight * 0.45 && r.top < window.innerHeight * 0.5)
+        return
+      }
       const el = afterSection ? document.querySelector(afterSection) : null
       const past = el ? el.getBoundingClientRect().top < window.innerHeight / 2 : window.scrollY > window.innerHeight * after
       // step aside for sections with their own button in that corner (contact, footer)
@@ -50,7 +71,7 @@ export function HighlightCard({ highlight, after = 1, afterSection }: {
       window.removeEventListener('scroll', check)
       window.removeEventListener('resize', check)
     }
-  }, [after, afterSection])
+  }, [after, afterSection, popIn, ready])
 
   if (!highlight || closed) return null
   const { id, title, label, text, link, linkText, logoUrl, logoAlt } = highlight
@@ -62,7 +83,7 @@ export function HighlightCard({ highlight, after = 1, afterSection }: {
   }
 
   return (
-    <aside className={`hl-card ${shown ? 'is-shown' : ''}`} aria-label="Announcement" inert={!shown}>
+    <aside className={`hl-card ${popIn ? 'is-pop' : ''} ${shown ? 'is-shown' : ''}`} aria-label="Announcement" inert={!shown}>
       <div className="hl-card-top">
         {logoUrl && <img src={`${logoUrl}?h=64&fit=max&auto=format`} alt={logoAlt ?? ''} className="hl-logo" />}
         {label && <span className="hl-label">{label}</span>}

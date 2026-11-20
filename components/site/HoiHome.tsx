@@ -162,7 +162,8 @@ export function HoiHome() {
       <PointerEffects />
       <ScrollBoat />
       <Header active="home" />
-      <HighlightCard highlight={highlight} afterSection="#programmes" />
+      {/* the announcement pops up on the boarding pass only (also shown in "Next up at hoi") */}
+      {step === 'done' && <HighlightCard highlight={highlight} popIn="#top" />}
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
       <LogoWindow intro title={home.introTitle} sub={home.introSub} />
@@ -202,13 +203,11 @@ export function HoiHome() {
                 <span className="hero-pill rise" style={rise(0)}>
                   <span className="pill-dot" aria-hidden="true" />{home.heroPill}
                 </span>
-                <h1 className="rise mt-8 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
-                  style={{ ...rise(1), fontSize: 'clamp(3.4rem, 10vw, 8.5rem)' }}>
-                  Hoi! <WaveHand />
+                <h1 className="rise mt-8" style={rise(1)}>
+                  <label htmlFor="hoi-name" className="block font-display font-black tracking-[-0.03em] text-ink" style={{ fontSize: 'clamp(2.2rem, 5.5vw, 4rem)', lineHeight: 1.02 }}>
+                    {home.namePrompt}
+                  </label>
                 </h1>
-                <label htmlFor="hoi-name" className="rise mt-6 font-display text-2xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]" style={rise(2)}>
-                  {home.namePrompt}
-                </label>
                 <div className="rise mt-10 w-full max-w-lg" style={rise(3)}>
                   <input
                     id="hoi-name"
