@@ -6,7 +6,6 @@ import { useContent } from './ContentContext'
 import { HighlightCard } from './HighlightCard'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
-import { HousePhoto } from './HousePhoto'
 import { Arrow, KEY_NAME, KEY_PERSONA, KEY_REMEMBER, WaveHand, fit, load, rise, save, splitHeadline, stegaClean, themeVars } from './shared'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -282,54 +281,51 @@ export function HoiHome() {
               </div>
             )}
 
-            {/* ---------- STEP 3: their page ---------- */}
+            {/* ---------- STEP 3: their page: centred and to the point, the programme button first ---------- */}
             {step === 'done' && (
-              <div key={`done-${persona ?? 'all'}`} className="hero-split grid w-full items-center gap-14 lg:grid-cols-[1.12fr_0.88fr] lg:gap-16">
-                <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <div key={`done-${persona ?? 'all'}`} className="hero-centre flex w-full flex-col items-center text-center">
                 <span className="hero-pill rise" style={rise(0)}>
                   <span className="pill-dot" aria-hidden="true" />
-                  {returning ? `Welcome back${firstName ? `, ${firstName}` : ''}` : current ? `For ${current.plural}` : home.heroPill}
+                  {current ? `For ${current.plural}` : home.heroPill}
                 </span>
-                <p className="rise mt-8 flex items-center gap-2 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-2xl" style={rise(1)}>
-                  Hoi{firstName ? `, ${firstName}` : ''}! <span className="text-accent"><WaveHand /></span>
-                </p>
-                <h1 className="rise mt-5 font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
-                  style={{ ...rise(2), ...fit(heroHeadline, 'var(--hero-h1)', '2.75rem') }}>
+                <h1 className="rise mx-auto mt-7 max-w-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
+                  style={{ ...rise(1), ...fit(heroHeadline, 'var(--hero-h1)', '2.75rem') }}>
                   {(() => {
                     const [a, b] = splitHeadline(heroHeadline)
                     return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
                   })()}
                 </h1>
-                <p className="rise mt-7 max-w-xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(3)}>{heroLine}</p>
-                <div className="rise mt-11 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:justify-start" style={rise(4)}>
+                <p className="rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(2)}>
+                  {firstName && <span className="font-semibold text-ink">{returning ? `Welcome back, ${firstName}. ` : `Hoi ${firstName}! `}</span>}
+                  {heroLine}
+                </p>
+                <div className="rise mt-10" style={rise(3)}>
                   {current ? (
-                    <>
-                      <a href="#programmes" className="btn-primary group h-14 px-7 text-base sm:text-lg">
-                        {current.cta}
-                        <Arrow />
-                      </a>
-                      <button type="button" onClick={() => setStep('persona')} className="btn-secondary h-14 px-7 text-base">
-                        I’m someone else
-                      </button>
-                    </>
+                    <a href="#programmes" className="btn-primary group h-16 gap-2 px-9 text-lg sm:text-xl">
+                      {current.cta}
+                      <Arrow />
+                    </a>
                   ) : (
-                    <button type="button" onClick={() => setStep('persona')} className="btn-primary group h-14 px-7 text-base sm:text-lg">
+                    <button type="button" onClick={() => setStep('persona')} className="btn-primary group h-16 gap-2 px-9 text-lg sm:text-xl">
                       {home.generalCta}
                       <Arrow />
                     </button>
                   )}
                 </div>
-                {returning && (
-                  <button type="button" onClick={forget}
-                    className="rise mt-6 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
-                    style={rise(5)}>
-                    {firstName ? `Not ${firstName}? Start over` : 'Start over'}
-                  </button>
-                )}
+                <div className="rise mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted" style={rise(4)}>
+                  {current && (
+                    <button type="button" onClick={() => setStep('persona')}
+                      className="underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
+                      I’m someone else
+                    </button>
+                  )}
+                  {returning && (
+                    <button type="button" onClick={forget}
+                      className="underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
+                      {firstName ? `Not ${firstName}? Start over` : 'Start over'}
+                    </button>
+                  )}
                 </div>
-
-                <HousePhoto src={home.heroPhoto.url.startsWith('https://') ? `${home.heroPhoto.url}?w=900&h=1125&fit=crop&auto=format` : home.heroPhoto.url}
-                  alt={home.heroPhoto.alt} style={rise(3)} />
               </div>
             )}
           </div>

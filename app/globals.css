@@ -392,8 +392,8 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 /* ============================================================
    HERO PHOTO — the team inside the hoi "house" (the logo's "o")
    ============================================================ */
-.hero-split { --hero-h1: clamp(2.5rem, 7vw, 6.25rem); }
-@media (min-width: 1024px) { .hero-split { --hero-h1: clamp(2.4rem, 4.3vw, 4.6rem); } }
+/* the personal hero (HoiHome step 3): one centred column */
+.hero-centre { --hero-h1: clamp(2.5rem, 7.5vw, 6.5rem); }
 
 .hero { --tx: 0; --ty: 0; }
 .house {
