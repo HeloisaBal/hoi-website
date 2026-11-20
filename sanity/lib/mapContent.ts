@@ -23,6 +23,8 @@ export const QUERY = `{
   "eventCount": count(*[_type == "event"]),
   "events": *[_type == "event" && (!defined(hideAfter) || hideAfter > now())]
     | order(coalesce(date, "9999-12-31") asc, _createdAt asc){ "id": _id, title, partner, label, details, colour, for, city, link },
+  "offerCount": count(*[_type == "offer"]),
+  "offers": *[_type == "offer"] | order(order asc, _createdAt asc){ "id": _id, name, tagline, text, points, for },
   "journeyCount": count(*[_type == "journeyStage"]),
   "journey": *[_type == "journeyStage"] | order(order asc, _createdAt asc){ "id": _id, title, text, programme, for },
   "partnerCount": count(*[_type == "partner"]),
@@ -101,13 +103,14 @@ export function mapContent(raw: Raw): SiteContent {
     home: {
       ...texts(home, d.home, {
         introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, pathHint: 50, cursorSail: 16, cursorGo: 16, generalHeadline: 60, generalLine: 160, generalCta: 28, ticketLabel: 40, ticketPassenger: 16, ticketRoute: 16, ticketGuest: 16, ticketOpenRoute: 20, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
-        journeyEyebrow: 25, journeyTitle: 40, mapEyebrow: 25, mapTitle: 40, mapText: 140, sbEyebrow: 25, sbTitle: 40,
+        offersEyebrow: 25, offersTitle: 40, offersIntro: 160, forYouLabel: 16, askLabel: 24, whoEyebrow: 25, whoTitle: 50, whoText: 320, journeyEyebrow: 25, journeyTitle: 40, mapEyebrow: 25, mapTitle: 40, mapText: 140, sbEyebrow: 25, sbTitle: 40,
         aboutEyebrow: 25, quote: 160, quoteBy: 70, aboutLinkText: 30, partnersTitle: 70, contactTitle: 40, contactText: 140, contactButton: 24,
       }),
       heroPhoto: photo(home.heroPhoto) ?? d.home.heroPhoto,
       scienceWords: sci.length ? sci : d.home.scienceWords,
       businessWords: biz.length ? biz : d.home.businessWords,
       aboutPhotos: [photo(home.aboutPhoto1), photo(home.aboutPhoto2)],
+      whoPoints: (() => { const w = strs(home.whoPoints, 50, 4); return w.length ? w : d.home.whoPoints })(),
     },
     eventsPage: texts(obj(raw.eventsPage), d.eventsPage, { pill: 30, titleLine1: 20, titleLine2: 20, intro: 160, ctaTitle: 40, ctaText: 160 }),
 
@@ -141,6 +144,13 @@ export function mapContent(raw: Raw): SiteContent {
         return title ? [{ id: cleanId(s.id), title, text: str(s.text, 140) ?? '', programme: str(s.programme, 40) ?? '', for: personaKeys(s.for) }] : []
       })
       : d.journey,
+
+    offers: Number(raw.offerCount) > 0
+      ? list(raw.offers).flatMap((o) => {
+        const name = str(o.name, 40)
+        return name ? [{ id: cleanId(o.id), name, tagline: str(o.tagline, 70) ?? '', text: str(o.text, 260) ?? '', points: strs(o.points, 70, 4), for: personaKeys(o.for) }] : []
+      })
+      : d.offers,
 
     partners: Number(raw.partnerCount) > 0
       ? list(raw.partners).flatMap((p) => {

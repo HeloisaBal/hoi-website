@@ -14,6 +14,7 @@ export const structure: StructureResolver = (S) =>
       S.listItem().title('Events page').id('eventsPage')
         .child(S.document().schemaType('eventsPage').documentId('eventsPage').title('Events page')),
       S.divider(),
+      S.documentTypeListItem('offer').title('Offers (what hoi offers)'),
       S.documentTypeListItem('highlight').title('Highlights (floating card)'),
       S.documentTypeListItem('event').title('Events'),
       S.documentTypeListItem('journeyStage').title('Journey stages'),

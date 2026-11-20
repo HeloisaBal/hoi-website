@@ -5,6 +5,7 @@ import { useContent } from '../ContentContext'
 import type { PersonaId } from '../data'
 import { KEY_PERSONA, load } from '../shared'
 import { CHAT_LIMITS } from '@/lib/chat/limits'
+import { ASK_EVENT } from './ask'
 import { ContactForm } from './ContactForm'
 import { MessageText } from './MessageText'
 import { useChat } from './useChat'
@@ -52,6 +53,23 @@ export function ChatWidget({ contactForm = false }: {
     setOpen(false)
     launcher.current?.focus()
   }
+
+  // "Ask about this" anywhere on the page: open the chat and send the question
+  const sendRef = useRef(chat.send)
+  useEffect(() => { sendRef.current = chat.send }, [chat.send])
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail
+      if (typeof q !== 'string' || !q) return
+      setAccent(pageAccent())
+      const p = load(KEY_PERSONA) as PersonaId | null
+      setPersona(p)
+      setOpen(true)
+      void sendRef.current(q, p)
+    }
+    window.addEventListener(ASK_EVENT, onAsk)
+    return () => window.removeEventListener(ASK_EVENT, onAsk)
+  }, [])
 
   // focus the message box when opening
   useEffect(() => { if (open) input.current?.focus() }, [open])

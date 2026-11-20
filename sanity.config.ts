@@ -41,6 +41,7 @@ export default defineConfig({
           eventsPage: defineLocations({ locations: [eventsPage] }),
           siteSettings: defineLocations({ locations: [home, eventsPage] }),
           highlight: defineLocations({ locations: [home, eventsPage] }),
+          offer: defineLocations({ locations: [home] }),
           event: defineLocations({ locations: [home, eventsPage] }),
           persona: defineLocations({ locations: [home] }),
           journeyStage: defineLocations({ locations: [home] }),

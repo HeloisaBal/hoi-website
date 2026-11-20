@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_THEME, MAIN_PATHS, type PersonaId } from './data'
 import { useContent } from './ContentContext'
 import { HighlightCard } from './HighlightCard'
@@ -13,7 +13,8 @@ import { PointerEffects } from './PointerEffects'
 import { ScrollBoat } from './ScrollBoat'
 import { LogoWindow } from './LogoWindow'
 import { FounderJourney } from './FounderJourney'
-import { NextEvents } from './NextEvents'
+import { OffersSection } from './OffersSection'
+import { WhoWeAre } from './WhoWeAre'
 import { ParallaxShapes } from './ParallaxShapes'
 import { ScienceBusiness } from './ScienceBusiness'
 import { PathWorld } from './PathWorld'
@@ -23,7 +24,7 @@ import { DotField } from './DotField'
 type Step = 'persona' | 'name' | 'loading' | 'done'
 
 export function HoiHome() {
-  const { personas, events, partners, team, home, settings, highlight } = useContent()
+  const { personas, partners, team, home, settings, highlight } = useContent()
   const [persona, setPersona] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('')
@@ -148,10 +149,6 @@ export function HoiHome() {
     el.style.setProperty('--ty', '0')
   }
 
-  const sortedEvents = useMemo(() => {
-    if (!persona) return events
-    return [...events].sort((a, b) => Number(b.for.includes(persona)) - Number(a.for.includes(persona)))
-  }, [persona, events])
 
   const mailSubject = encodeURIComponent(
     stegaClean(`Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`),
@@ -282,7 +279,7 @@ export function HoiHome() {
                   </div>
 
                   {current ? (
-                    <a href="#programmes" className="ticket-stub group" data-cursor={home.cursorGo}>
+                    <a href="#offers" className="ticket-stub group" data-cursor={home.cursorGo}>
                       <span className="ticket-stub-label">{current.cta}</span>
                       <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
                       <span className="ticket-barcode" aria-hidden="true" />
@@ -317,13 +314,16 @@ export function HoiHome() {
         )}
       </section>
 
-      {/* ================= S1: the founder journey (programmes) ================= */}
+      {/* ================= the heart of the site: what hoi offers, for this visitor first ================= */}
+      <OffersSection persona={persona} plural={current?.plural} />
+
+      {/* ================= who hoi is ================= */}
+      <WhoWeAre />
+
+      {/* ================= S1: how it works, from idea to company (programmes per stage) ================= */}
       <FounderJourney persona={persona} />
 
       <ScienceBusiness />
-
-      {/* ================= EVENTS: hoi's own next events, one element among many ================= */}
-      <NextEvents events={sortedEvents} persona={persona} plural={current?.plural} />
 
       {/* ================= PEOPLE ================= */}
       <section id="about" className="container-x pt-28">

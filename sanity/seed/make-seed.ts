@@ -29,6 +29,10 @@ const docs: Record<string, unknown>[] = [
     title: e.title.replace(/­/g, ''), partner: e.partner, label: e.label, details: e.meta,
     colour: colourOf(e.gradient), for: e.for, city: e.city, date: i === 0 ? '2026-11-12' : undefined,
   })),
+  ...defaultContent.offers.map((o, i) => ({
+    _id: `offer-${o.id}`, _type: 'offer',
+    name: o.name, tagline: o.tagline, text: o.text, points: o.points, for: o.for, order: (i + 1) * 10,
+  })),
   ...defaultContent.journey.map((s, i) => ({
     _id: `journey-${s.id}`, _type: 'journeyStage',
     title: s.title, text: s.text, programme: s.programme, for: s.for, order: (i + 1) * 10,

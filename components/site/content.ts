@@ -6,8 +6,8 @@
    ------------------------------------------------------------ */
 
 import {
-  events, journey, partners, personas, team,
-  type HoiEvent, type Highlight, type JourneyStage, type Partner, type Persona, type TeamMember,
+  events, journey, offers, partners, personas, team,
+  type HoiEvent, type Highlight, type JourneyStage, type Offer, type Partner, type Persona, type TeamMember,
 } from './data'
 
 import { defaultImpressum, defaultPrivacy, type ImpressumContent, type PrivacyContent } from './legalDefaults'
@@ -35,6 +35,15 @@ export type HomeTexts = {
   ticketOpenRoute: string
   rememberLabel: string
   heroPhoto: Photo
+  offersEyebrow: string
+  offersTitle: string
+  offersIntro: string
+  forYouLabel: string
+  askLabel: string
+  whoEyebrow: string
+  whoTitle: string
+  whoText: string
+  whoPoints: string[]
   eventsEyebrow: string
   eventsTitle: string
   eventsMarquee: string
@@ -109,6 +118,7 @@ export type SiteContent = {
   personas: Persona[]
   events: HoiEvent[]
   journey: JourneyStage[]
+  offers: Offer[]
   partners: Partner[]
   team: TeamMember[]
   highlight: Highlight | null
@@ -149,6 +159,15 @@ export const defaultContent: SiteContent = {
     ticketOpenRoute: 'Open ticket',
     rememberLabel: 'Remember me on this device',
     heroPhoto: { url: '/photos/hoi-team.jpg', alt: 'The hoi startup factory team in front of a hoi flag' },
+    offersEyebrow: 'What we offer',
+    offersTitle: 'What hoi offers',
+    offersIntro: 'Programmes, people and access for every step from idea to company. Pick what fits you, or ask us.',
+    forYouLabel: 'For you',
+    askLabel: 'Ask about this',
+    whoEyebrow: 'Who we are',
+    whoTitle: 'The startup factory of the Northwest',
+    whoText: 'hoi startup factory brings science, business and startups together across Bremen, Oldenburg and the whole Northwest. Our mission: anchor entrepreneurial thinking in science and turn research into viable companies.',
+    whoPoints: ['Universities of Bremen and Oldenburg', 'Chambers of commerce and regional companies', 'Founders, researchers and investors', 'One ecosystem across state borders'],
     eventsEyebrow: 'What’s on',
     eventsTitle: 'Next up at hoi',
     eventsMarquee: 'WHAT’S ON · IM NORDEN GRÜNDEN · WHAT’S ON · MIT RÜCKENWIND ·',
@@ -182,6 +201,7 @@ export const defaultContent: SiteContent = {
   personas,
   events,
   journey,
+  offers,
   partners,
   team,
   highlight: null,

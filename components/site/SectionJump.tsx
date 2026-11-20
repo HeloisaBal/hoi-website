@@ -29,6 +29,8 @@ const LABELS: Record<string, string> = {
   top: 'hoi',
   events: 'What’s on',
   programmes: 'Programmes',
+  offers: 'What we offer',
+  who: 'Who we are',
   about: 'About us',
   contact: 'Say hoi',
 }
@@ -103,7 +105,6 @@ export function SectionJump() {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-      if (prefersReducedMotion()) return
       const a = (e.target as Element | null)?.closest<HTMLAnchorElement>('a[href]')
       if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return
       const url = new URL(a.href, location.href)
@@ -111,6 +112,21 @@ export function SectionJump() {
       if (url.pathname.startsWith('/studio') || location.pathname.startsWith('/studio')) return // the Sanity editor
       const samePage = url.pathname === location.pathname
       const id = url.hash.length > 1 ? decodeURIComponent(url.hash.slice(1)) : TOP
+      if (prefersReducedMotion()) {
+        // no animation, but a section on this page is still reached reliably (e.g. the logo → hero)
+        const target = samePage && id !== TOP ? document.getElementById(id) : null
+        if (target) {
+          e.preventDefault()
+          target.scrollIntoView({ behavior: 'instant', block: 'start' })
+          history.pushState(null, '', `#${id}`)
+        } else if (!samePage && id !== TOP && !/\.[a-z0-9]+$/i.test(url.pathname)) {
+          // another page: go there, then straight to the section once it's rendered
+          e.preventDefault()
+          pending.current = id
+          router.push(`${url.pathname}${url.hash}`, { scroll: false })
+        }
+        return
+      }
       // a section on this page that exists, or another page of the site
       if (samePage && (id === TOP || !document.getElementById(id))) return
       if (!samePage && /\.[a-z0-9]+$/i.test(url.pathname)) return // files, not pages

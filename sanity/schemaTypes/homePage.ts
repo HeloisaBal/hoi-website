@@ -9,7 +9,7 @@ const g = (name: string, title: string) => ({ name, title })
 export const homePage = defineType({
   name: 'homePage', title: 'Homepage', type: 'document',
   groups: [
-    g('intro', '1 · Intro & hero'), g('events', '2 · What’s on'), g('journey', '3 · Journey'), g('map', '4 · Map'),
+    g('intro', '1 · Intro & hero'), g('offers', '2 · What we offer'), g('who', '3 · Who we are'), g('events', 'Events'), g('journey', '3 · Journey'), g('map', '4 · Map'),
     g('sb', '5 · Science & business'), g('about', '6 · Founders'), g('partners', '7 · Partners'), g('contact', '8 · Contact'),
   ],
   fields: [
@@ -34,6 +34,15 @@ export const homePage = defineType({
     text('ticketOpenRoute', 'Boarding pass: route for visitors who skipped', 20, { group: 'intro' }),
     photo('heroPhoto', 'Hero: photo in the house shape', { group: 'intro', description: 'Shown after a visitor picks who they are. Portrait photos work best.' }),
 
+    text('offersEyebrow', 'Small label', 25, { group: 'offers' }),
+    text('offersTitle', 'Title', 40, { group: 'offers', description: 'Visitors who picked a path see e.g. “What hoi offers founders”. The offers themselves are under “Offers”.' }),
+    text('offersIntro', 'Text under the title', 160, { group: 'offers', rows: 2 }),
+    text('forYouLabel', 'Tag on offers for the visitor', 16, { group: 'offers' }),
+    text('askLabel', 'Button on each offer (opens the chatbot)', 24, { group: 'offers' }),
+    text('whoEyebrow', 'Small label', 25, { group: 'who' }),
+    text('whoTitle', 'Title', 50, { group: 'who' }),
+    text('whoText', 'Text', 320, { group: 'who', rows: 4 }),
+    words('whoPoints', 'Key points', 4, 50, { group: 'who', description: 'Up to 4 short points shown next to the text.' }),
     text('eventsEyebrow', 'Small label', 25, { group: 'events' }),
     text('eventsTitle', 'Title', 40, { group: 'events', description: 'When a visitor picked who they are, it says “Next up for founders” etc.' }),
     text('eventsMarquee', 'Big moving text behind the cards', 90, { group: 'events' }),

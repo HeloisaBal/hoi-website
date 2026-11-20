@@ -21,13 +21,20 @@ export function knowledgeText(c: SiteContent, siteUrl: string): string {
     line(c.home.heroPill, c.home.introSub),
     `${plain(c.home.sbTitle)}: science (${c.home.scienceWords.map(plain).join(', ')}) meets business (${c.home.businessWords.map(plain).join(', ')}).`)
 
+  s.push('', `# ${plain(c.home.whoTitle)}`, plain(c.home.whoText), ...c.home.whoPoints.map((p) => `- ${plain(p)}`))
+
+  s.push('', '# What hoi offers (programmes and support)')
+  for (const o of c.offers) {
+    s.push(`- ${plain(o.name)}: ${plain(o.tagline)}. ${plain(o.text)}${o.points.length ? ` What you get: ${o.points.map(plain).join('; ')}.` : ''}${forWho(o.for)}`)
+  }
+
   s.push('', '# Who hoi is for')
   for (const p of c.personas) s.push(`- ${plain(p.plural)}: ${line(p.headline, p.line)}`)
 
   s.push('', `# ${plain(c.home.journeyTitle)} (the stages and hoi's programme for each)`)
   for (const j of c.journey) s.push(`- ${plain(j.title)}: ${plain(j.text)} Programme: ${plain(j.programme)}${forWho(j.for)}`)
 
-  s.push('', `# Events, programmes and calls (listed on ${siteUrl}/events)`, plain(c.eventsPage.intro))
+  s.push('', `# Events, programmes and calls (hoi shares its events mainly in its event app, via QR codes at in-person events; some are listed on ${siteUrl}/events)`, plain(c.eventsPage.intro))
   if (!c.events.length) s.push('- No events are listed right now.')
   for (const e of c.events) {
     const city = e.city ? ` in ${CITIES[e.city].name}` : ''

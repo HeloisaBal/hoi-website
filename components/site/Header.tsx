@@ -6,8 +6,8 @@ import { Arrow } from './shared'
 import { useSlidingIndicator } from './useSlidingIndicator'
 
 const links = [
-  { href: '/#programmes', label: 'Programmes', key: 'programmes' },
-  { href: '/#about', label: 'About', key: 'about' },
+  { href: '/#offers', label: 'What we offer', key: 'offers' },
+  { href: '/#who', label: 'Who we are', key: 'who' },
   { href: '/#contact', label: 'Contact', key: 'contact' },
 ] as const
 
@@ -77,7 +77,7 @@ export function Header({ active }: { active?: string }) {
   return (
     <header className={`site-header sticky top-0 z-50 ${scrolled || open ? 'is-scrolled' : ''}`}>
       <div className="container-x flex h-16 items-center justify-between gap-3 sm:h-[72px]">
-        <Link href="/" aria-label="hoi startup factory, home" className="shrink-0" onClick={close}>
+        <Link href="/#top" aria-label="hoi startup factory, home" className="shrink-0" onClick={close}>
           <img src="/logo.png" alt="hoi startup factory" className="h-8 w-auto sm:h-9" />
         </Link>
 

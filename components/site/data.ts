@@ -199,35 +199,35 @@ export const journey: JourneyStage[] = [
     id: 'idea',
     title: 'Idea',
     text: 'Curious about founding? Learn the basics and meet people who have done it.',
-    programme: 'Microdegrees & events',
+    programme: 'hoi science boost',
     for: ['student'],
   },
   {
     id: 'lab',
     title: 'Lab',
     text: 'From a research result to a first business idea, with people who have done it before.',
-    programme: 'Science Start-up Funnel',
+    programme: 'hoi venture studio',
     for: ['researcher'],
   },
   {
     id: 'team',
     title: 'Team',
     text: 'Hands-on support to build the company: team, product and the first customers.',
-    programme: 'Venture Studio',
+    programme: 'Accelerator & mentoring',
     for: ['founder'],
   },
   {
     id: 'funding',
     title: 'Funding',
     text: 'Access to funding, investors and the people who open doors in the Northwest.',
-    programme: 'Kapital & Netzwerk',
+    programme: 'hoi capital',
     for: ['investor'],
   },
   {
     id: 'company',
     title: 'Company',
     text: 'Regional companies and startups working together on real challenges.',
-    programme: 'Corporate Cooperations',
+    programme: 'hoi collabX',
     for: ['company'],
   },
 ]
@@ -275,3 +275,62 @@ export const demoHighlight: Highlight = {
   link: '/#contact',
   linkText: 'Stay in the loop',
 }
+
+/* ------------------------------------------------------------
+   What hoi offers (homepage "What hoi offers you"). Built-in until
+   Sanity → Offers has entries. `for` decides which visitors see an
+   offer first and marked "For you".
+   ------------------------------------------------------------ */
+export type Offer = {
+  id: string
+  name: string
+  /** one line: what it is */
+  tagline: string
+  text: string
+  /** what you get, 2 to 4 short points */
+  points: string[]
+  for: PersonaId[]
+}
+
+export const offers: Offer[] = [
+  {
+    id: 'venture-studio',
+    name: 'hoi venture studio',
+    tagline: 'From research result to market-ready product',
+    text: 'We turn research results and early ideas into market-ready MVPs, step by step and with a clear structure, until your product fits the market.',
+    points: ['Product–market fit, tested with real customers', 'Hands-on support to build the MVP', 'Industry partners and pilot projects'],
+    for: ['founder', 'researcher'],
+  },
+  {
+    id: 'accelerator',
+    name: 'Accelerator & mentoring',
+    tagline: 'Grow faster with people who have done it',
+    text: 'A structured programme for young startups, with experienced mentors from science and business who help you with team, product and your first customers.',
+    points: ['Personal mentors from the region', 'Workshops on business model, sales and pitching', 'A network of founders going through the same'],
+    for: ['founder', 'student'],
+  },
+  {
+    id: 'capital',
+    name: 'hoi capital',
+    tagline: 'Access to capital and investors',
+    text: 'We open the door to regional and national venture capital, and prepare founders for talks with investors. Investors meet science-based startups from the Northwest early.',
+    points: ['Introductions to regional and national VCs', 'VC training for founders', 'Early access to startups for investors'],
+    for: ['founder', 'investor'],
+  },
+  {
+    id: 'collabx',
+    name: 'hoi collabX',
+    tagline: 'Startups and companies, working together',
+    text: 'We bring startups and established companies together for joint innovation projects, curated so both sides benefit.',
+    points: ['Matched with the right startups for your challenge', 'Pilot projects and joint innovation', 'Early access to new technologies'],
+    for: ['company', 'founder', 'investor'],
+  },
+  {
+    id: 'science-boost',
+    name: 'hoi science boost',
+    tagline: 'Entrepreneurship at universities',
+    text: 'Entrepreneurship education for students and researchers across the universities of the Northwest, plus a shared strategy for turning research (IP) into companies.',
+    points: ['Courses and formats to learn founding', 'Support with patents and IP', 'Find a team for your idea'],
+    for: ['researcher', 'student'],
+  },
+]
