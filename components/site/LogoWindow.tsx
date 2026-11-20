@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { clamp, motionAllowed, sectionProgress, useScrollFrame } from './useScrollFrame'
 
 /* ------------------------------------------------------------
@@ -16,6 +16,14 @@ const WIN_W = 0.12
 const WIN_H = 0.24
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
+
+/** marks the section while its title is on screen, and lets the page know when that changes */
+export const TITLE_SHOWN_EVENT = 'hoi:window-title'
+function setTitleShown(section: HTMLElement, on: boolean) {
+  if (section.hasAttribute('data-title-shown') === on) return
+  section.toggleAttribute('data-title-shown', on)
+  window.dispatchEvent(new Event(TITLE_SHOWN_EVENT))
+}
 
 export function LogoWindow({ intro = false, title = 'Welcome to the\nharbour of ideas', sub = 'Im Norden gründen – mit Rückenwind.' }: {
   intro?: boolean
@@ -46,7 +54,15 @@ export function LogoWindow({ intro = false, title = 'Welcome to the\nharbour of 
     house.style.opacity = p > 0.88 ? '0' : '1'
     after.style.opacity = clamp((p - 0.04) / 0.3, 0, 1).toFixed(2)
     hint.style.opacity = (1 - clamp(p / 0.12, 0, 1)).toFixed(2)
+    // the announcement pops up while the welcome title is showing (HighlightCard)
+    setTitleShown(section, p > 0.2 && p < 0.97)
   })
+
+  // without motion the title is simply there
+  useEffect(() => {
+    const section = sectionRef.current
+    if (section && !motionAllowed()) setTitleShown(section, true)
+  }, [])
 
   return (
     <section ref={sectionRef} className={`logo-window ${intro ? 'logo-window--intro' : ''}`} aria-labelledby="window-title">

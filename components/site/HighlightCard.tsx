@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import type { Highlight } from './data'
 import { Arrow } from './shared'
+import { TITLE_SHOWN_EVENT } from './LogoWindow'
 
 /* ------------------------------------------------------------
    Floating announcement card (a partnership, a new programme, news).
    Two modes:
-   - popIn: pops up shortly after a section (the homepage hero) is on
-     screen, and goes away when the visitor scrolls past it.
+   - popIn: pops up shortly after a section is on screen (on the homepage:
+     the "Welcome to the harbour of ideas" title), and goes away when the
+     visitor scrolls past it.
    - otherwise: slides in at the bottom-left once the visitor has
      scrolled past the first screen. Both step aside near
    sections marked data-no-highlight while they are on screen (the 3D
@@ -67,9 +69,11 @@ export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
     check()
     window.addEventListener('scroll', check, { passive: true })
     window.addEventListener('resize', check)
+    window.addEventListener(TITLE_SHOWN_EVENT, check)
     return () => {
       window.removeEventListener('scroll', check)
       window.removeEventListener('resize', check)
+      window.removeEventListener(TITLE_SHOWN_EVENT, check)
     }
   }, [after, afterSection, popIn, ready])
 

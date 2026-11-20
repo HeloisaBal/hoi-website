@@ -13,7 +13,7 @@ export const persona = defineType({
     text('headline', 'Hero headline', 50, { required: true, description: 'The last words get the colour gradient.' }),
     text('line', 'Hero text', 160, { required: true, rows: 2 }),
     text('cta', 'Hero button', 28, { required: true }),
-    text('pathLabel', 'Path card: title', 24, { description: 'On the cards visitors pick from when they land, e.g. “(Potential) founder”.' }),
+    text('pathLabel', 'Path card: title', 24, { description: 'On the cards visitors pick from when they land, e.g. “Founder”.' }),
     text('pathText', 'Path card: line under the title', 80, { description: 'Shown on the three big cards (founder, investor, company).' }),
   ],
   preview: { select: { title: 'plural', subtitle: 'headline' } },

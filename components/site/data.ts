@@ -34,7 +34,7 @@ export type Persona = {
   cta: string
   /** short form used in sentences: "for researchers" */
   plural: string
-  /** title on the path card when landing, e.g. "(Potential) founder" */
+  /** title on the path card when landing, e.g. "Founder" */
   pathLabel: string
   /** one line under it on the big path cards */
   pathText: string
@@ -65,7 +65,7 @@ export const personas: Persona[] = [
     line: 'Programmes, capital and a network across Bremen, Oldenburg and the whole Northwest.',
     cta: 'See founder programmes',
     plural: 'founders',
-    pathLabel: '(Potential) founder',
+    pathLabel: 'Founder',
     pathText: 'You have an idea or a startup and want to build it here.',
   },
   {

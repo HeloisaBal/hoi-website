@@ -1268,8 +1268,9 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
 /* Same logic as the GroundUp showcase: the stage is pulled up over the last
    screen of the hero and stays pinned while four bands rise and overlap.
    The fourth band has the offers' background colour, so the offers continue
-   straight from it. Height = the screen it overlaps + the rise (1.1 screens) + a little hold. */
-.wave-bridge { position: relative; z-index: 20; height: 225vh; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
+   straight from it. Height = the screen it overlaps + the rise (it starts once the map's end is 60% down
+   the screen and takes 1.1 screens) + a little hold. */
+.wave-bridge { position: relative; z-index: 20; height: 255vh; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
@@ -1278,7 +1279,7 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
 .wave-bridge-band { height: 130%; transform: translate3d(0, 110vh, 0); }
 @media (max-width: 759px) {
   /* phones: shorter rise (0.62 screens) and slightly shorter bands, like Maré */
-  .wave-bridge { height: 175vh; }
+  .wave-bridge { height: 205vh; }
   .wave-bridge-band { height: 120%; }
 }
 .wave-bridge-band-1 { color: var(--c1); }

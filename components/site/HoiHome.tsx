@@ -162,8 +162,9 @@ export function HoiHome() {
       <PointerEffects />
       <ScrollBoat />
       <Header active="home" />
-      {/* the announcement pops up on the boarding pass only (also shown in "Next up at hoi") */}
-      {step === 'done' && <HighlightCard highlight={highlight} popIn="#top" />}
+      {/* the announcement pops up as soon as "Welcome to the harbour of ideas" shows
+          (also shown in "Next up at hoi"); visitors can close it */}
+      <HighlightCard highlight={highlight} popIn=".logo-window--intro[data-title-shown]" />
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
       <LogoWindow intro title={home.introTitle} sub={home.introSub} />
