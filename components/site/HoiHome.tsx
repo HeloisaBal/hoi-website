@@ -1,33 +1,36 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_THEME, type PersonaId } from './data'
+import { DEFAULT_THEME, MAIN_PATHS, type PersonaId } from './data'
 import { useContent } from './ContentContext'
 import { HighlightCard } from './HighlightCard'
 import { centreOf, prefersReducedMotion, useEffects } from './effects'
 import { HeroBackdrop } from './Backdrop'
 import { HousePhoto } from './HousePhoto'
-import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, save, splitHeadline, stegaClean, themeVars } from './shared'
+import { Arrow, KEY_NAME, KEY_PERSONA, KEY_REMEMBER, WaveHand, fit, load, rise, save, splitHeadline, stegaClean, themeVars } from './shared'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PointerEffects } from './PointerEffects'
 import { ScrollBoat } from './ScrollBoat'
 import { LogoWindow } from './LogoWindow'
 import { FounderJourney } from './FounderJourney'
-import { EventStack } from './EventStack'
+import { NextEvents } from './NextEvents'
 import { ParallaxShapes } from './ParallaxShapes'
 import { ScienceBusiness } from './ScienceBusiness'
 import { HarbourMap } from './HarbourMap'
 import { DotField } from './DotField'
 
-type Step = 'name' | 'loading' | 'persona' | 'done'
+/* Landing: 1. pick a path (or skip), 2. optional first name, 3. the hero for that path */
+type Step = 'persona' | 'name' | 'loading' | 'done'
 
 export function HoiHome() {
   const { personas, events, partners, team, home, settings, highlight } = useContent()
   const [persona, setPersona] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('')
-  const [step, setStep] = useState<Step>('name')
+  /* "Remember me": name and persona are only saved in the browser when ticked */
+  const [remember, setRemember] = useState(false)
+  const [step, setStep] = useState<Step>('persona')
   const [returning, setReturning] = useState(false)
   const [motion, setMotion] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
@@ -38,11 +41,14 @@ export function HoiHome() {
   /* restore a returning visitor before the first paint, so there's no flash of the name step */
   useLayoutEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
+    // anything saved without the "Remember me" tick (older versions of the site) is removed
+    if (load(KEY_REMEMBER) !== '1') { save(KEY_NAME, null); save(KEY_PERSONA, null) }
+    else setRemember(true)
     const p = load(KEY_PERSONA) as PersonaId | null
     const n = load(KEY_NAME)
     if (n) { setName(n); setDraft(n) }
     if (p && personas.some((x) => x.id === p)) { setPersona(p); setReturning(true); setStep('done') }
-    else if (n) setStep('persona')
+    else if (n) { setReturning(true); setStep('done') } // remembered, but chose "Just looking around"
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [personas])
 
@@ -64,6 +70,10 @@ export function HoiHome() {
   }, [])
 
   const current = personas.find((p) => p.id === persona) ?? null
+  const mainPaths = MAIN_PATHS.flatMap((id) => personas.filter((p) => p.id === id))
+  const morePaths = personas.filter((p) => !MAIN_PATHS.includes(p.id))
+  const heroHeadline = current?.headline ?? home.generalHeadline
+  const heroLine = current?.line ?? home.generalLine
   const theme = current?.theme ?? DEFAULT_THEME
   const firstName = name.trim().split(/\s+/)[0] ?? ''
 
@@ -78,8 +88,11 @@ export function HoiHome() {
     const clean = draft.trim().slice(0, 40)
     const finish = () => {
       setName(clean)
-      save(KEY_NAME, clean || null)
-      setStep('persona')
+      // saved only with consent; unticking removes anything saved before
+      save(KEY_REMEMBER, remember ? '1' : null)
+      save(KEY_NAME, remember ? clean || null : null)
+      save(KEY_PERSONA, remember ? persona : null)
+      setStep('done')
       if (clean) {
         const { x, y } = heroCentre()
         burst(x, y, [theme.c1, theme.c2, theme.c3, theme.accent], 56)
@@ -97,8 +110,10 @@ export function HoiHome() {
     const apply = () => {
       setPersona(id)
       setReturning(false)
-      save(KEY_PERSONA, id)
-      setStep('done')
+      if (load(KEY_REMEMBER) === '1') save(KEY_PERSONA, id)
+      // first visit: ask for the name next; someone switching paths goes straight to their hero
+      if (name) setStep('done')
+      else { setStep('name'); window.setTimeout(() => inputRef.current?.focus(), 80) }
     }
     if (prefersReducedMotion()) { apply(); return }
     colourWipe(x, y, p.theme.c1, p.theme.c3, p.word)
@@ -109,15 +124,17 @@ export function HoiHome() {
     }, 900)
   }
 
-  function editName() {
-    setDraft(name)
-    setStep('name')
-    window.setTimeout(() => inputRef.current?.focus(), 50)
+  /* "Just looking around": the general hero, no personalisation */
+  function skipPath() {
+    setPersona(null)
+    setReturning(false)
+    if (load(KEY_REMEMBER) === '1') save(KEY_PERSONA, null)
+    setStep('done')
   }
 
   function forget() {
-    setPersona(null); setName(''); setDraft(''); setReturning(false); setStep('name')
-    save(KEY_PERSONA, null); save(KEY_NAME, null)
+    setPersona(null); setName(''); setDraft(''); setReturning(false); setStep('persona')
+    save(KEY_PERSONA, null); save(KEY_NAME, null); save(KEY_REMEMBER, null); setRemember(false)
   }
 
   /* soft spotlight that follows the pointer across the hero */
@@ -155,7 +172,7 @@ export function HoiHome() {
       <PointerEffects />
       <ScrollBoat />
       <Header active="home" />
-      <HighlightCard highlight={highlight} afterSection="#events" />
+      <HighlightCard highlight={highlight} afterSection="#programmes" />
 
       {/* ================= S4: fly through the logo window, first thing on landing ================= */}
       <LogoWindow intro title={home.introTitle} sub={home.introSub} />
@@ -170,7 +187,7 @@ export function HoiHome() {
         <div className="container-x py-20 sm:py-28 lg:py-32">
           <div className={step === 'done' ? 'w-full' : 'mx-auto flex max-w-5xl flex-col items-center text-center'} aria-live="polite">
 
-            {/* ---------- STEP 1: the name ---------- */}
+            {/* ---------- STEP 2: the name (optional) ---------- */}
             {step === 'name' && (
               <form key="name" onSubmit={submitName} className="flex w-full flex-col items-center">
                 <span className="hero-pill rise" style={rise(0)}>
@@ -202,7 +219,10 @@ export function HoiHome() {
                     <Arrow />
                   </button>
                 </div>
-                <p className="rise mt-5 text-sm text-muted" style={rise(5)}>Optional. Only saved in your browser, so we can greet you next time.</p>
+                <label className="rise mt-6 inline-flex cursor-pointer items-center gap-2.5 text-left text-sm text-muted" style={rise(5)}>
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="remember-box" />
+                  <span>{home.rememberLabel}</span>
+                </label>
               </form>
             )}
 
@@ -220,68 +240,84 @@ export function HoiHome() {
               </div>
             )}
 
-            {/* ---------- STEP 2: who are you? ---------- */}
+            {/* ---------- STEP 1: which path? ---------- */}
             {step === 'persona' && (
-              <div key="persona" className="flex flex-col items-center">
-                <h1 className="font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink"
-                  style={fit(`Hoi, ${firstName}!`, 'clamp(3rem, 9vw, 7.5rem)', '2.75rem')}>
-                  {firstName ? (
-                    <span aria-label={`Hoi, ${firstName}!`}>
-                      {['Hoi,', `${firstName}!`].map((word, w) => (
-                        <span key={w} aria-hidden="true" className={`inline-block whitespace-nowrap ${w > 0 ? 'text-accent' : ''}`}>
-                          {w > 0 && <span className="inline-block w-[0.26em]" />}
-                          {Array.from(word).map((ch, i) => (
-                            <span key={i} className="pop" style={{ animationDelay: `${0.035 * (i + w * 5)}s` }}>{ch}</span>
-                          ))}
-                        </span>
-                      ))}
-                    </span>
-                  ) : <span className="rise inline-block">Hoi!</span>}
+              <div key="persona" className="flex w-full flex-col items-center">
+                <span className="hero-pill rise" style={rise(0)}>
+                  <span className="pill-dot" aria-hidden="true" />{home.heroPill}
+                </span>
+                <h1 className="rise mt-8 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
+                  style={{ ...rise(1), fontSize: 'clamp(3.4rem, 10vw, 8.5rem)' }}>
+                  Hoi! <WaveHand />
                 </h1>
-                <p id="who" className="rise mt-6 text-xl font-medium text-muted sm:text-2xl" style={rise(3)}>
-                  {firstName ? 'Nice to meet you. So, you’re…' : 'Tell us who you are. You’re…'}
+                <p id="path-question" className="rise mt-6 font-display text-2xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]" style={rise(2)}>
+                  {home.pathPrompt}
                 </p>
-                <div role="group" aria-labelledby="who" className="mt-10 flex max-w-3xl flex-wrap justify-center gap-2.5 sm:gap-3">
-                  {personas.map((p, i) => (
-                    <button key={p.id} type="button" onClick={(e) => pick(p.id, e)}
-                      className="chip rise" style={rise(4 + i * 0.6)}>
-                      {p.chip}
+                <div role="group" aria-labelledby="path-question" className="path-grid mt-10 w-full">
+                  {mainPaths.map((p, i) => (
+                    <button key={p.id} type="button" onClick={(e) => pick(p.id, e)} aria-pressed={persona === p.id}
+                      className="path-card rise group" style={{ ...rise(3 + i * 0.5), ...themeVars(p.theme) }}>
+                      <span className="path-word" aria-hidden="true">{p.word}</span>
+                      <span className="path-label">{p.pathLabel}</span>
+                      <span className="path-text">{p.pathText}</span>
+                      <span className="path-go" aria-hidden="true"><Arrow /></span>
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={editName} className="rise mt-10 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent" style={rise(8)}>
-                  {firstName ? `Not ${firstName}? Change your name` : 'Add your name'}
+                {morePaths.length > 0 && (
+                  <div className="rise mt-8 flex flex-wrap items-center justify-center gap-2.5" style={rise(5)}>
+                    <span className="text-sm font-medium text-muted">{home.pathMore}</span>
+                    {morePaths.map((p) => (
+                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e)} aria-pressed={persona === p.id} className="chip">
+                        {p.pathLabel}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={skipPath}
+                  className="rise mt-8 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
+                  style={rise(6)}>
+                  {home.pathSkip}
                 </button>
               </div>
             )}
 
             {/* ---------- STEP 3: their page ---------- */}
-            {step === 'done' && current && (
-              <div key={`done-${persona}`} className="hero-split grid w-full items-center gap-14 lg:grid-cols-[1.12fr_0.88fr] lg:gap-16">
+            {step === 'done' && (
+              <div key={`done-${persona ?? 'all'}`} className="hero-split grid w-full items-center gap-14 lg:grid-cols-[1.12fr_0.88fr] lg:gap-16">
                 <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
                 <span className="hero-pill rise" style={rise(0)}>
                   <span className="pill-dot" aria-hidden="true" />
-                  {returning ? `Welcome back${firstName ? `, ${firstName}` : ''}` : `For ${current.plural}`}
+                  {returning ? `Welcome back${firstName ? `, ${firstName}` : ''}` : current ? `For ${current.plural}` : home.heroPill}
                 </span>
                 <p className="rise mt-8 flex items-center gap-2 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-2xl" style={rise(1)}>
                   Hoi{firstName ? `, ${firstName}` : ''}! <span className="text-accent"><WaveHand /></span>
                 </p>
                 <h1 className="rise mt-5 font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink text-balance"
-                  style={{ ...rise(2), ...fit(current.headline, 'var(--hero-h1)', '2.75rem') }}>
+                  style={{ ...rise(2), ...fit(heroHeadline, 'var(--hero-h1)', '2.75rem') }}>
                   {(() => {
-                    const [a, b] = splitHeadline(current.headline)
+                    const [a, b] = splitHeadline(heroHeadline)
                     return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
                   })()}
                 </h1>
-                <p className="rise mt-7 max-w-xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(3)}>{current.line}</p>
+                <p className="rise mt-7 max-w-xl text-lg leading-relaxed text-muted sm:text-xl" style={rise(3)}>{heroLine}</p>
                 <div className="rise mt-11 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:justify-start" style={rise(4)}>
-                  <a href="#events" className="btn-primary group h-14 px-7 text-base sm:text-lg">
-                    {current.cta}
-                    <Arrow />
-                  </a>
-                  <button type="button" onClick={() => setStep('persona')} className="btn-secondary h-14 px-7 text-base">
-                    I’m someone else
-                  </button>
+                  {current ? (
+                    <>
+                      <a href="#programmes" className="btn-primary group h-14 px-7 text-base sm:text-lg">
+                        {current.cta}
+                        <Arrow />
+                      </a>
+                      <button type="button" onClick={() => setStep('persona')} className="btn-secondary h-14 px-7 text-base">
+                        I’m someone else
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setStep('persona')} className="btn-primary group h-14 px-7 text-base sm:text-lg">
+                      {home.generalCta}
+                      <Arrow />
+                    </button>
+                  )}
                 </div>
                 {returning && (
                   <button type="button" onClick={forget}
@@ -300,16 +336,16 @@ export function HoiHome() {
         </div>
       </section>
 
-      {/* ================= EVENTS: pinned card stack ================= */}
-      <EventStack events={sortedEvents} persona={persona} plural={current?.plural} />
-
-      {/* ================= S6: the 3D harbour map (slides over the end of the event waves) ================= */}
-      <HarbourMap />
-
-      {/* ================= S1: the founder journey ================= */}
+      {/* ================= S1: the founder journey (programmes) ================= */}
       <FounderJourney persona={persona} />
 
       <ScienceBusiness />
+
+      {/* ================= S6: the 3D harbour map ================= */}
+      <HarbourMap />
+
+      {/* ================= EVENTS: hoi's own next events, one element among many ================= */}
+      <NextEvents events={sortedEvents} persona={persona} plural={current?.plural} />
 
       {/* ================= PEOPLE ================= */}
       <section id="about" className="container-x pt-28">

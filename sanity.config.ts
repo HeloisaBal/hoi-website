@@ -47,6 +47,8 @@ export default defineConfig({
           partner: defineLocations({ locations: [home] }),
           teamMember: defineLocations({ locations: [home] }),
           chatbot: defineLocations({ locations: [home, eventsPage] }),
+          impressum: defineLocations({ locations: [{ title: 'Impressum', href: '/impressum' }, { title: 'Datenschutz', href: '/datenschutz' }] }),
+          privacyPolicy: defineLocations({ locations: [{ title: 'Datenschutz', href: '/datenschutz' }] }),
         },
       },
     }),

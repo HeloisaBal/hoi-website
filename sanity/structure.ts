@@ -32,4 +32,9 @@ export const structure: StructureResolver = (S) =>
         .child(S.document().schemaType('siteSettings').documentId('siteSettings').title('Contact & links')),
       S.listItem().title('Chatbot').id('chatbot')
         .child(S.document().schemaType('chatbot').documentId('chatbot').title('Chatbot')),
+      S.divider(),
+      S.listItem().title('Impressum').id('impressum')
+        .child(S.document().schemaType('impressum').documentId('impressum').title('Impressum')),
+      S.listItem().title('Datenschutzerklärung').id('privacyPolicy')
+        .child(S.document().schemaType('privacyPolicy').documentId('privacyPolicy').title('Datenschutzerklärung')),
     ])

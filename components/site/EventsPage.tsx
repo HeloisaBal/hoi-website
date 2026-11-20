@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_THEME, type PersonaId } from './data'
 import { useContent } from './ContentContext'
 import { HighlightCard } from './HighlightCard'
@@ -10,19 +10,13 @@ import { Footer } from './Footer'
 import { EventCard } from './EventCard'
 import { PointerEffects } from './PointerEffects'
 import { ScrollBoat } from './ScrollBoat'
-import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, stegaClean, themeVars } from './shared'
-
-type ForFilter = PersonaId | 'all'
-
-const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+import { Arrow, KEY_NAME, KEY_PERSONA, WaveHand, fit, load, rise, themeVars } from './shared'
 
 export function EventsPage() {
   const { events, personas, eventsPage: t, settings, highlight } = useContent()
   const TITLE = `${t.titleLine1} ${t.titleLine2}`
   const [saved, setSaved] = useState<PersonaId | null>(null)
   const [name, setName] = useState('')
-  const [forWho, setForWho] = useState<ForFilter>('all')
-  const [type, setType] = useState<string>('all')
   const heroRef = useRef<HTMLElement>(null)
 
   /* pick up who the visitor told us they are on the homepage */
@@ -30,18 +24,12 @@ export function EventsPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     const p = load(KEY_PERSONA) as PersonaId | null
     const n = load(KEY_NAME)
-    if (p && personas.some((x) => x.id === p)) { setSaved(p); setForWho(p) }
+    if (p && personas.some((x) => x.id === p)) setSaved(p)
     if (n) setName(n.trim().split(/\s+/)[0])
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [personas])
 
-  // labels compared without the Studio preview's invisible markers
-  const types = useMemo(() => Array.from(new Set(events.map((e) => stegaClean(e.label)))), [events])
-  const shown = events.filter((e) =>
-    (type === 'all' || stegaClean(e.label) === type) && (forWho === 'all' || e.for.includes(forWho)))
-
-  const forPersona = personas.find((p) => p.id === forWho) ?? null
-  const theme = forPersona?.theme ?? (saved ? personas.find((p) => p.id === saved)!.theme : DEFAULT_THEME)
+  const theme = saved ? personas.find((p) => p.id === saved)!.theme : DEFAULT_THEME
 
   function onPointerMove(e: React.PointerEvent<HTMLElement>) {
     const el = heroRef.current
@@ -52,8 +40,6 @@ export function EventsPage() {
     el.style.setProperty('--spot', '1')
   }
 
-  const resetFilters = () => { setForWho('all'); setType('all') }
-  const filterKey = `${forWho}-${type}`
 
   return (
     <div className="themed" style={themeVars(theme)}>
@@ -84,48 +70,27 @@ export function EventsPage() {
         </div>
       </section>
 
-      {/* ================= FILTERS ================= */}
-      <div className="filter-bar relative z-40 sm:sticky sm:top-[72px]">
-        <div className="container-x flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-3">
-            <FilterRow label="For">
-              <Chip on={forWho === 'all'} onClick={() => setForWho('all')}>Everyone</Chip>
-              {personas.map((p) => (
-                <Chip key={p.id} on={forWho === p.id} onClick={() => setForWho(p.id)}>
-                  {capital(p.plural)}
-                  {saved === p.id && <span className="ml-1.5 rounded-full bg-current/10 px-1.5 text-[11px] font-bold uppercase tracking-wide opacity-80">you</span>}
-                </Chip>
-              ))}
-            </FilterRow>
-            <FilterRow label="Type">
-              <Chip on={type === 'all'} onClick={() => setType('all')}>All types</Chip>
-              {types.map((t) => <Chip key={t} on={type === t} onClick={() => setType(t)}>{t}</Chip>)}
-            </FilterRow>
+      {/* ================= EVENTS: hoi's own; all regional events are in the event app ================= */}
+      <section className="container-x pb-8 pt-4 sm:pt-6" aria-label="Events">
+        {settings.eventAppUrl && (
+          <div className="mb-10 flex justify-center">
+            <a href={settings.eventAppUrl} target="_blank" rel="noopener noreferrer" className="btn-primary group h-12 gap-2 px-6">
+              {settings.eventAppLabel} <Arrow />
+            </a>
           </div>
-          <p className="text-sm font-medium text-muted" aria-live="polite">
-            {shown.length} {shown.length === 1 ? 'event' : 'events'}
-            {forPersona ? ` for ${forPersona.plural}` : ''}
-          </p>
-        </div>
-      </div>
-
-      {/* ================= EVENTS ================= */}
-      <section className="container-x pb-8 pt-10 sm:pt-12" aria-label="Events">
-        {shown.length > 0 ? (
+        )}
+        {events.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((ev, i) => (
-              <div key={`${filterKey}-${ev.id}`} className="rise" style={rise(i)}>
+            {events.map((ev, i) => (
+              <div key={ev.id} className="rise" style={rise(i)}>
                 <EventCard ev={ev} picked={!!saved && ev.for.includes(saved)} showAsk />
               </div>
             ))}
           </div>
         ) : (
-          <div key={filterKey} className="rise flex flex-col items-center rounded-[1.4rem] border-2 border-dashed border-line px-6 py-16 text-center">
+          <div className="rise flex flex-col items-center rounded-[1.4rem] border-2 border-dashed border-line px-6 py-16 text-center">
             <p className="font-display text-2xl font-bold text-ink">Nothing here right now.</p>
-            <p className="mt-2 max-w-md text-muted">
-              No {type === 'all' ? 'events' : type.toLowerCase() + 's'}{forPersona ? ` for ${forPersona.plural}` : ''} at the moment. New ones are added all the time.
-            </p>
-            <button type="button" onClick={resetFilters} className="btn-secondary mt-7 h-12 px-6">Show all events</button>
+            <p className="mt-2 max-w-md text-muted">New hoi events are added all the time.</p>
           </div>
         )}
       </section>
@@ -156,24 +121,5 @@ export function EventsPage() {
 
       <Footer />
     </div>
-  )
-}
-
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-10 shrink-0 text-xs font-bold uppercase tracking-[0.12em] text-muted">{label}</span>
-      <div className="no-scrollbar -mr-5 flex gap-2 overflow-x-auto pr-5 sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0" role="group" aria-label={`Filter by ${label.toLowerCase()}`}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={`filter-chip ${on ? 'is-on' : ''}`}>
-      {children}
-    </button>
   )
 }

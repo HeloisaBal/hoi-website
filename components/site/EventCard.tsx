@@ -9,19 +9,23 @@ import { useContent } from './ContentContext'
  * `match`: fits the visitor's persona (others are faded).
  * `picked`: show the "Picked for you" tag.
  * `row`: narrower card used in the homepage's swipe row on phones.
+ * `compact`: lower card for the homepage's "Next at hoi" strip.
  */
-export function EventCard({ ev, match = true, picked = false, row = false, showAsk = false, style }: {
+export function EventCard({ ev, match = true, picked = false, row = false, compact = false, showAsk = false, style }: {
   ev: HoiEvent
   match?: boolean
   picked?: boolean
   row?: boolean
+  compact?: boolean
   showAsk?: boolean
   style?: React.CSSProperties
 }) {
   const { settings } = useContent()
-  const size = row
-    ? 'min-h-[320px] w-[80%] shrink-0 snap-start sm:min-h-[380px] sm:w-auto'
-    : 'min-h-[360px] sm:min-h-[400px]'
+  const size = compact
+    ? 'min-h-[250px] w-[80%] shrink-0 snap-start sm:min-h-[270px] sm:w-auto'
+    : row
+      ? 'min-h-[320px] w-[80%] shrink-0 snap-start sm:min-h-[380px] sm:w-auto'
+      : 'min-h-[360px] sm:min-h-[400px]'
   return (
     <article data-spotlight="light" data-tilt
       className={`lift relative flex flex-col rounded-[1.4rem] p-6 text-white ${size} ${match ? '' : 'opacity-55 saturate-50'}`}

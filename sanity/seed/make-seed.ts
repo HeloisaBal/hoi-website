@@ -7,19 +7,22 @@ import { writeFileSync } from 'node:fs'
 import { defaultContent } from '../../components/site/content'
 import { EVENT_COLOURS, demoHighlight } from '../../components/site/data'
 
-const { home, eventsPage, settings, chatbot } = defaultContent
+const { home, eventsPage, settings, chatbot, impressum, privacy } = defaultContent
+const sections = (list: { heading: string; text: string }[]) =>
+  list.map((x, i) => ({ _key: `s${i + 1}`, _type: 'legalSection', ...x }))
 const colourOf = (gradient: string) =>
   Object.entries(EVENT_COLOURS).find(([, c]) => c.gradient === gradient)?.[0] ?? 'teal-blue'
 const omit = <T extends object>(o: T, keys: string[]) =>
   Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)))
 
 const docs: Record<string, unknown>[] = [
-  { _id: 'siteSettings', _type: 'siteSettings', ...settings },
+  { _id: 'siteSettings', _type: 'siteSettings', ...settings, eventAppUrl: settings.eventAppUrl || undefined },
   { _id: 'homePage', _type: 'homePage', ...omit(home, ['heroPhoto', 'aboutPhotos']) },
   { _id: 'eventsPage', _type: 'eventsPage', ...eventsPage },
   ...defaultContent.personas.map((p) => ({
     _id: `persona-${p.id}`, _type: 'persona',
     chip: p.chip, plural: p.plural, word: p.word, headline: p.headline, line: p.line, cta: p.cta,
+    pathLabel: p.pathLabel, pathText: p.pathText,
   })),
   ...defaultContent.events.map((e, i) => ({
     _id: `event-${e.id}`, _type: 'event',
@@ -33,6 +36,8 @@ const docs: Record<string, unknown>[] = [
   ...defaultContent.partners.map((p, i) => ({ _id: `partner-${i + 1}`, _type: 'partner', name: p.name, order: (i + 1) * 10 })),
   ...defaultContent.team.map((t, i) => ({ _id: `team-${i + 1}`, _type: 'teamMember', name: t.name, role: t.role, order: (i + 1) * 10 })),
   { _id: 'chatbot', _type: 'chatbot', ...chatbot, faq: [] },
+  { _id: 'impressum', _type: 'impressum', ...impressum, sections: sections(impressum.sections) },
+  { _id: 'privacyPolicy', _type: 'privacyPolicy', ...privacy, sections: sections(privacy.sections) },
   {
     _id: 'highlight-tedx', _type: 'highlight', title: demoHighlight.title, label: demoHighlight.label,
     text: demoHighlight.text, link: demoHighlight.link, linkText: demoHighlight.linkText,

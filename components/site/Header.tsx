@@ -6,7 +6,6 @@ import { Arrow } from './shared'
 import { useSlidingIndicator } from './useSlidingIndicator'
 
 const links = [
-  { href: '/events', label: 'Events', key: 'events' },
   { href: '/#programmes', label: 'Programmes', key: 'programmes' },
   { href: '/#about', label: 'About', key: 'about' },
   { href: '/#contact', label: 'Contact', key: 'contact' },
@@ -43,7 +42,7 @@ function MobileLinks({ active, onNavigate }: { active?: string; onNavigate: () =
 
 /* Site header: transparent over the hero, frosted once the page scrolls.
    On phones the links move into a full-screen menu behind a menu button. */
-export function Header({ active }: { active?: 'home' | 'events' }) {
+export function Header({ active }: { active?: string }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const navRef = useSlidingIndicator<HTMLDivElement>('.nav-link')

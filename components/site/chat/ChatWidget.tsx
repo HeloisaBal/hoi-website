@@ -148,7 +148,9 @@ export function ChatWidget({ contactForm = false }: {
                 </svg>
               </button>
             </form>
-            <p className="text-[0.7rem] leading-snug text-muted">{t.disclaimer}</p>
+            <p className="text-[0.7rem] leading-snug text-muted">
+              {t.disclaimer} <a href="/datenschutz" className="chat-link font-normal">{t.privacyLink}</a>
+            </p>
           </div>
         </section>
       )}

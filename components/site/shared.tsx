@@ -24,6 +24,8 @@ export function fit(text: string, max: string, gutter: string): React.CSSPropert
    ------------------------------------------------------------ */
 export const KEY_PERSONA = 'hoi.persona'
 export const KEY_NAME = 'hoi.name'
+/** the visitor ticked "Remember me": only then are name and persona saved (consent, § 25 TDDDG) */
+export const KEY_REMEMBER = 'hoi.remember'
 
 export function load(key: string) {
   try { return window.localStorage.getItem(key) } catch { return null }

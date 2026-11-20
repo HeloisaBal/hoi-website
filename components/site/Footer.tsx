@@ -15,8 +15,8 @@ export function Footer({ onReset }: { onReset?: () => void }) {
         <Link href="/events" className="hover:text-ink">Events</Link>
         <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-ink">Instagram</a>
         <a href={settings.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-ink">LinkedIn</a>
-        <a href="#" className="hover:text-ink">Impressum</a>
-        <a href="#" className="hover:text-ink">Datenschutz</a>
+        <Link href="/impressum" className="hover:text-ink">Impressum</Link>
+        <Link href="/datenschutz" className="hover:text-ink">Datenschutz</Link>
         {onReset && (
           <button type="button" onClick={onReset} className="hover:text-ink">Reset personalisation</button>
         )}

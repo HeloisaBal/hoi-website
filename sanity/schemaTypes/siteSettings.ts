@@ -12,6 +12,12 @@ export const siteSettings = defineType({
     text('address', 'Address (footer)', 80),
     defineField({ name: 'instagram', title: 'Instagram link', type: 'url', validation: (r) => r.uri({ scheme: ['https'] }) }),
     defineField({ name: 'linkedin', title: 'LinkedIn link', type: 'url', validation: (r) => r.uri({ scheme: ['https'] }) }),
+    defineField({
+      name: 'eventAppUrl', title: 'Event app link', type: 'url',
+      description: 'hoi’s app with all regional events. The button “All events in the region” appears once this is filled in.',
+      validation: (r) => r.uri({ scheme: ['https'] }),
+    }),
+    text('eventAppLabel', 'Event app button text', 30),
   ],
   preview: { prepare: () => ({ title: 'Contact & links' }) },
 })

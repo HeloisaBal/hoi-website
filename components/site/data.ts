@@ -34,7 +34,14 @@ export type Persona = {
   cta: string
   /** short form used in sentences: "for researchers" */
   plural: string
+  /** title on the path card when landing, e.g. "(Potential) founder" */
+  pathLabel: string
+  /** one line under it on the big path cards */
+  pathText: string
 }
+
+/** The big path cards on landing, in this order; the other personas are smaller options below. */
+export const MAIN_PATHS: PersonaId[] = ['founder', 'investor', 'company']
 
 export const personas: Persona[] = [
   {
@@ -46,6 +53,8 @@ export const personas: Persona[] = [
     line: 'We help you take an idea out of the lab: first conversations, funding calls and a team around you.',
     cta: 'Start with your research',
     plural: 'researchers',
+    pathLabel: 'Researcher',
+    pathText: 'Turn your research into a company.',
   },
   {
     id: 'founder',
@@ -56,6 +65,8 @@ export const personas: Persona[] = [
     line: 'Programmes, capital and a network across Bremen, Oldenburg and the whole Northwest.',
     cta: 'See founder programmes',
     plural: 'founders',
+    pathLabel: '(Potential) founder',
+    pathText: 'You have an idea or a startup and want to build it here.',
   },
   {
     id: 'student',
@@ -66,6 +77,8 @@ export const personas: Persona[] = [
     line: 'Learn the basics, meet founders at our events and find a team for your idea.',
     cta: 'Explore what’s on',
     plural: 'students',
+    pathLabel: 'Student',
+    pathText: 'Curious about founding? Start here.',
   },
   {
     id: 'company',
@@ -76,6 +89,8 @@ export const personas: Persona[] = [
     line: 'Work with startups from the region and get early access to new ideas and technologies.',
     cta: 'Partner with hoi',
     plural: 'companies',
+    pathLabel: 'Company',
+    pathText: 'Work with startups and get early access to new ideas.',
   },
   {
     id: 'investor',
@@ -86,6 +101,8 @@ export const personas: Persona[] = [
     line: 'Meet the teams coming out of our universities and research institutes, early.',
     cta: 'Meet our startups',
     plural: 'investors',
+    pathLabel: 'Investor',
+    pathText: 'Meet science-based startups from the Northwest, early.',
   },
 ]
 

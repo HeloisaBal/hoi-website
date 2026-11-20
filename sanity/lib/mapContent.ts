@@ -1,6 +1,7 @@
 import { stegaClean } from 'next-sanity'
 import { defaultContent, type Photo, type SiteContent } from '@/components/site/content'
 import { FAQ_LIMITS } from '@/lib/chat/limits'
+import { LEGAL_LIMITS } from '@/lib/legal/limits'
 import { CITIES, EVENT_COLOURS, demoHighlight, personas, type CityId, type EventColour, type PersonaId } from '@/components/site/data'
 
 /* Turns what Sanity returns into the site's content, with the built-in
@@ -15,10 +16,10 @@ import { CITIES, EVENT_COLOURS, demoHighlight, personas, type CityId, type Event
 
 const IMG = `{ "url": asset->url, alt }`
 export const QUERY = `{
-  "settings": *[_id == "siteSettings"][0]{ email, address, instagram, linkedin },
+  "settings": *[_id == "siteSettings"][0]{ email, address, instagram, linkedin, eventAppUrl, eventAppLabel },
   "home": *[_id == "homePage"][0]{ ..., "heroPhoto": heroPhoto${IMG}, "aboutPhoto1": aboutPhoto1${IMG}, "aboutPhoto2": aboutPhoto2${IMG} },
   "eventsPage": *[_id == "eventsPage"][0],
-  "personas": *[_type == "persona"]{ "key": _id, chip, plural, word, headline, line, cta },
+  "personas": *[_type == "persona"]{ "key": _id, chip, plural, word, headline, line, cta, pathLabel, pathText },
   "eventCount": count(*[_type == "event"]),
   "events": *[_type == "event" && (!defined(hideAfter) || hideAfter > now())]
     | order(coalesce(date, "9999-12-31") asc, _createdAt asc){ "id": _id, title, partner, label, details, colour, for, city, link },
@@ -31,7 +32,9 @@ export const QUERY = `{
   "highlightCount": count(*[_type == "highlight"]),
   "highlight": *[_type == "highlight" && startAt <= now() && (!defined(endAt) || endAt > now())]
     | order(priority desc, startAt desc)[0]{ "id": _id, title, label, text, link, linkText, "logoUrl": logo.asset->url, "logoAlt": logo.alt },
-  "chatbot": *[_id == "chatbot"][0]{ enabled, buttonLabel, title, greeting, suggestions, placeholder, disclaimer, contactIntro, contactPrivacy, contactThanks, contactButton, nameLabel, emailLabel, messageLabel, sendLabel, checkText, errorText, busyText, faq[]{ question, answer } }
+  "impressum": *[_id == "impressum"][0]{ organisation, address, representedBy, email, phone, register, vatId, responsible, sections[]{ heading, text } },
+  "privacy": *[_id == "privacyPolicy"][0]{ updated, intro, sections[]{ heading, text } },
+  "chatbot": *[_id == "chatbot"][0]{ enabled, buttonLabel, title, greeting, suggestions, placeholder, disclaimer, privacyLink, contactIntro, contactPrivacy, contactThanks, contactButton, nameLabel, emailLabel, messageLabel, sendLabel, checkText, errorText, busyText, faq[]{ question, answer } }
 }`
 
 type Raw = Record<string, unknown>
@@ -86,7 +89,8 @@ export function mapContent(raw: Raw): SiteContent {
 
   return {
     settings: {
-      ...texts(obj(raw.settings), d.settings, { address: 80 }),
+      ...texts(obj(raw.settings), d.settings, { address: 80, eventAppLabel: 30 }),
+      eventAppUrl: (() => { const u = safeLink(obj(raw.settings).eventAppUrl); return u && /^https:\/\//i.test(u) ? u : '' })(),
       email: (() => {
         const e = typeof obj(raw.settings).email === 'string' ? stegaClean(obj(raw.settings).email as string).trim() : ''
         return /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(e) ? e : d.settings.email
@@ -96,7 +100,7 @@ export function mapContent(raw: Raw): SiteContent {
     },
     home: {
       ...texts(home, d.home, {
-        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
+        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, generalHeadline: 60, generalLine: 160, generalCta: 28, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
         journeyEyebrow: 25, journeyTitle: 40, mapEyebrow: 25, mapTitle: 40, mapText: 140, sbEyebrow: 25, sbTitle: 40,
         aboutEyebrow: 25, quote: 160, quoteBy: 70, aboutLinkText: 30, partnersTitle: 70, contactTitle: 40, contactText: 140, contactButton: 24,
       }),
@@ -109,7 +113,7 @@ export function mapContent(raw: Raw): SiteContent {
 
     personas: d.personas.map((p) => {
       const r = list(raw.personas).find((x) => cleanId(x.key) === `persona-${p.id}`)
-      return r ? { ...p, ...texts(r, p, { chip: 30, plural: 20, word: 12, headline: 50, line: 160, cta: 28 }) } : p
+      return r ? { ...p, ...texts(r, p, { chip: 30, plural: 20, word: 12, headline: 50, line: 160, cta: 28, pathLabel: 24, pathText: 80 }) } : p
     }),
 
     events: Number(raw.eventCount) > 0
@@ -168,7 +172,7 @@ export function mapContent(raw: Raw): SiteContent {
 
     chatbot: {
       ...texts(bot, d.chatbot, {
-        buttonLabel: 20, title: 30, greeting: 220, placeholder: 40, disclaimer: 120,
+        buttonLabel: 20, title: 30, greeting: 220, placeholder: 40, disclaimer: 120, privacyLink: 30,
         contactIntro: 160, contactPrivacy: 200, contactThanks: 160, contactButton: 24,
         nameLabel: 20, emailLabel: 20, messageLabel: 20, sendLabel: 16, checkText: 30, errorText: 140, busyText: 140,
       }),
@@ -181,5 +185,33 @@ export function mapContent(raw: Raw): SiteContent {
       const answer = str(stegaClean(f.answer), FAQ_LIMITS.answer)
       return question && answer ? [{ question, answer }] : []
     }).slice(0, FAQ_LIMITS.count),
+
+    // legal pages: a document filled in Sanity replaces the built-in draft completely
+    impressum: (() => {
+      const r = obj(raw.impressum)
+      if (!Object.keys(r).length) return d.impressum
+      const email = typeof r.email === 'string' ? stegaClean(r.email).trim() : ''
+      return {
+        ...texts(r, { ...d.impressum, organisation: '', address: '', representedBy: '', phone: '', register: '', vatId: '', responsible: '' }, {
+          organisation: 120, address: 200, representedBy: 200, phone: 40, register: 150, vatId: 30, responsible: 200,
+        }),
+        email: /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(email) ? email : '',
+        sections: legalSections(r.sections),
+      }
+    })(),
+    privacy: (() => {
+      const r = obj(raw.privacy)
+      if (!Object.keys(r).length) return d.privacy
+      const updated = typeof r.updated === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stegaClean(r.updated)) ? stegaClean(r.updated) : d.privacy.updated
+      return { updated, intro: str(r.intro, 600) ?? '', sections: legalSections(r.sections) }
+    })(),
   }
+}
+
+function legalSections(v: unknown) {
+  return list(v).flatMap((s) => {
+    const heading = str(s.heading, LEGAL_LIMITS.heading)
+    const text = str(s.text, LEGAL_LIMITS.text)
+    return heading && text ? [{ heading, text }] : []
+  }).slice(0, LEGAL_LIMITS.sections)
 }
