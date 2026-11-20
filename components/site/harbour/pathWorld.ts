@@ -1,15 +1,18 @@
 /* ------------------------------------------------------------
-   The path world: where visitors choose their path when they land
-   (inspired by thelaend.de). Three low-poly island cities in a calm
-   sea, one per main path, each in its persona's colours and with
-   its own landmark:
-   - founder:  a workshop (the big hoi house) with a crane
-   - investor: towers and a lighthouse
-   - company:  a harbour with warehouses, containers and a ship
-   Bridges link the islands; a ferry and a sailboat move between them.
+   The path world: the whole first screen where visitors choose
+   their path (inspired by thelaend.de). A low-poly landscape with
+   rolling hills, forests, the sea at the back, a river with a
+   bridge, roads, wind turbines, a giant "hoi" on the hill and a
+   blimp. Three districts, one per main path, each built for its
+   persona and outlined in its colour:
+   - founder:  launch pad with a rocket, maker space, workshop, crane
+   - investor: glass towers, a bank with columns, gold coin stacks
+   - company:  factory with smoking chimneys, warehouses, a container
+               port with a gantry crane, trucks driving to the bridge
+   Boats sail on the sea and the river.
 
-   Pure three.js, no React (PathWorld.tsx drives it). Loaded only in
-   the browser, after the first paint.
+   Pure three.js, no React (PathWorld.tsx drives it).
+   Coordinates: x to the right, z towards the viewer, sea at -z.
    ------------------------------------------------------------ */
 
 import * as THREE from 'three'
@@ -21,13 +24,59 @@ export type IslandSpec = { id: PersonaId; theme: Theme }
 export type PathWorld = {
   frame: (now: number) => void
   resize: (w: number, h: number) => void
-  /** screen position of each island's label, or null when off screen */
+  /** screen position of each district's label */
   labelPositions: () => Partial<Record<PersonaId, { x: number; y: number }>>
-  /** the island under a point on the canvas (CSS pixels) */
+  /** the district under a point on the canvas (CSS pixels) */
   pickAt: (x: number, y: number) => PersonaId | null
   hover: (id: PersonaId | null) => void
   flyTo: (id: PersonaId | null) => void
   dispose: () => void
+}
+
+/* ---------- the land ---------- */
+type P = readonly [number, number]
+const RIVER: P[] = [[5, -17], [6.5, -10], [5.5, -4], [7, 2], [6, 8], [9, 14], [13, 24]]
+const DISTRICTS: Record<string, { x: number; z: number; r: number }> = {
+  founder: { x: -13, z: 2, r: 5.6 },
+  investor: { x: -1.5, z: 10.5, r: 5 },
+  company: { x: 16.5, z: -2.5, r: 6.2 },
+}
+const LETTERS = { x: -14, z: -9 }
+
+const coastZ = (x: number) => -14 + 1.6 * Math.sin(x * 0.18 + 0.5) + 0.8 * Math.sin(x * 0.47)
+
+function distTo(line: readonly P[], x: number, z: number) {
+  let best = Infinity
+  for (let i = 1; i < line.length; i++) {
+    const [ax, az] = line[i - 1], [bx, bz] = line[i]
+    const dx = bx - ax, dz = bz - az
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)))
+    best = Math.min(best, Math.hypot(x - (ax + t * dx), z - (az + t * dz)))
+  }
+  return best
+}
+const smooth = (a: number, b: number, v: number) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) }
+const hills = (x: number, z: number) =>
+  0.55 * Math.sin(x * 0.21 + 1.3) * Math.cos(z * 0.24) + 0.35 * Math.sin(x * 0.5 + z * 0.37) + 0.2 * Math.cos(z * 0.8 - x * 0.3)
+
+function groundHeight(x: number, z: number) {
+  const coast = coastZ(x)
+  if (z < coast - 0.4) return -1.4
+  let h = 0.35 + Math.max(-0.2, hills(x, z)) * 0.9
+  // a ridge behind the "hoi" letters and along the left
+  h += 2.6 * Math.exp(-((x - LETTERS.x) ** 2 / 60 + (z - LETTERS.z + 2.5) ** 2 / 22))
+  h += 1.4 * smooth(-18, -30, x)
+  // beach towards the sea
+  h = THREE.MathUtils.lerp(-0.2, h, smooth(coast - 0.4, coast + 2.2, z))
+  // flat ground for the districts
+  for (const d of Object.values(DISTRICTS)) {
+    const k = smooth(d.r + 2.5, d.r, Math.hypot(x - d.x, z - d.z))
+    h = THREE.MathUtils.lerp(h, 0.3, k)
+  }
+  // the river valley
+  const r = distTo(RIVER, x, z)
+  if (r < 2.4) h = Math.min(h, THREE.MathUtils.lerp(-1, h, smooth(1.1, 2.4, r)))
+  return h
 }
 
 function rng(seed: number) {
@@ -45,240 +94,440 @@ function houseGeometry() {
   g.translate(0, 0, -0.4)
   return g
 }
-
-/** an irregular round island slab, flat-shaded; top surface at y = top */
-function slabGeometry(radius: number, top: number, thickness: number, seed: number, bevel: number) {
+/** a triangular prism (roofs, the bank's pediment), 1 wide, 1 high, 1 deep */
+function prismGeometry() {
+  const s = new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0.5, 1), new THREE.Vector2(-0.5, 0)])
+  const g = new THREE.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false })
+  g.translate(0, 0, -0.5)
+  return g
+}
+/** an irregular flat plot outline */
+function plotGeometry(radius: number, seed: number, thickness: number) {
   const r = rng(seed)
-  const n = 11
+  const n = 12
   const pts: THREE.Vector2[] = []
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2
-    const k = radius * (0.86 + r() * 0.24)
+    const k = radius * (0.88 + r() * 0.18)
     pts.push(new THREE.Vector2(Math.cos(a) * k, Math.sin(a) * k))
   }
-  const g = new THREE.ExtrudeGeometry(new THREE.Shape(pts), {
-    depth: thickness, bevelEnabled: bevel > 0, bevelSize: bevel, bevelThickness: bevel * 0.8, bevelSegments: 1,
-  })
-  g.rotateX(-Math.PI / 2) // extrusion now points up
-  g.translate(0, top - thickness - bevel * 0.8, 0)
+  const g = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: thickness, bevelEnabled: false })
+  g.rotateX(-Math.PI / 2)
   return g
 }
 
-/* Island layouts: a triangle on wide screens, a zigzag down the screen on tall ones. */
-const WIDE: Record<string, [number, number]> = { founder: [-7.2, 2.6], investor: [0, -4.2], company: [7.2, 2.6] }
-const TALL: Record<string, [number, number]> = { founder: [-1.6, -7.4], investor: [2.2, 0], company: [-1.6, 7.4] }
-const RADIUS = 3.3
-
-export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[], opts: { light: boolean; reduced: boolean; tall: boolean }): PathWorld {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !opts.light, alpha: true, powerPreference: 'low-power' })
+export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[], opts: { light: boolean; reduced: boolean; tall: boolean; fog: string }): PathWorld {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !opts.light, alpha: true, powerPreference: 'high-performance' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.light ? 1.5 : 2))
   renderer.shadowMap.enabled = !opts.light
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
   const scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 200)
+  scene.fog = new THREE.Fog(opts.fog, 40, 90)
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 300)
   const disposables: { dispose: () => void }[] = []
   const keep = <T extends { dispose: () => void }>(x: T) => { disposables.push(x); return x }
-  const mat = (color: THREE.ColorRepresentation, extra: THREE.MeshStandardMaterialParameters = {}) =>
-    keep(new THREE.MeshStandardMaterial({ color, roughness: 0.85, flatShading: true, ...extra }))
-  const shadow = (o: THREE.Object3D) => { o.traverse((c) => { c.castShadow = !opts.light; c.receiveShadow = !opts.light }); return o }
+  const mats = new Map<string, THREE.MeshStandardMaterial>()
+  const mat = (color: string, extra: THREE.MeshStandardMaterialParameters = {}) => {
+    const key = color + JSON.stringify(extra)
+    let m = mats.get(key)
+    if (!m) { m = keep(new THREE.MeshStandardMaterial({ color, roughness: 0.85, flatShading: true, ...extra })); mats.set(key, m) }
+    return m
+  }
+  const castAll = (o: THREE.Object3D) => { o.traverse((c) => { c.castShadow = !opts.light; c.receiveShadow = !opts.light }); return o }
 
-  /* light */
-  scene.add(new THREE.HemisphereLight('#ffffff', '#cfe9ff', 1.9))
-  const sun = new THREE.DirectionalLight('#fffaf0', 2.1)
-  sun.position.set(-12, 24, 14)
+  /* ---------- light ---------- */
+  scene.add(new THREE.HemisphereLight('#ffffff', '#b9e3a6', 1.7))
+  const sun = new THREE.DirectionalLight('#fff6e0', 2.3)
+  sun.position.set(-18, 30, 14)
   sun.castShadow = !opts.light
-  sun.shadow.mapSize.set(1024, 1024)
-  Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 70 })
-  sun.shadow.bias = -0.0008
+  sun.shadow.mapSize.set(2048, 2048)
+  Object.assign(sun.shadow.camera, { left: -36, right: 36, top: 28, bottom: -28, near: 1, far: 100 })
+  sun.shadow.bias = -0.0006
   scene.add(sun)
 
-  /* sea */
-  const water = new THREE.Mesh(keep(new THREE.CircleGeometry(40, 48)), mat('#bfe6f4', { roughness: 0.4, transparent: true, opacity: 0.9 }))
+  /* ---------- terrain ---------- */
+  const W = 80, D = 60
+  const seg = opts.light ? [80, 60] : [140, 104]
+  let terrainGeo: THREE.BufferGeometry = new THREE.PlaneGeometry(W, D, seg[0], seg[1])
+  terrainGeo.rotateX(-Math.PI / 2)
+  terrainGeo.translate(0, 0, 4)
+  const tpos = terrainGeo.attributes.position
+  for (let i = 0; i < tpos.count; i++) tpos.setY(i, groundHeight(tpos.getX(i), tpos.getZ(i)))
+  terrainGeo = keep(terrainGeo.toNonIndexed())
+  const tp = terrainGeo.attributes.position
+  const colors = new Float32Array(tp.count * 3)
+  const greens = ['#8bd07f', '#80c876', '#95d789', '#7bc172'].map((c) => new THREE.Color(c))
+  const high = new THREE.Color('#a6dc95'), sand = new THREE.Color('#f1e4b8'), bed = new THREE.Color('#7fb2e6')
+  const col = new THREE.Color()
+  for (let f = 0; f < tp.count; f += 3) {
+    const cx = (tp.getX(f) + tp.getX(f + 1) + tp.getX(f + 2)) / 3
+    const cy = (tp.getY(f) + tp.getY(f + 1) + tp.getY(f + 2)) / 3
+    const cz = (tp.getZ(f) + tp.getZ(f + 1) + tp.getZ(f + 2)) / 3
+    if (cy < -0.25) col.copy(bed)
+    else if (cz - coastZ(cx) < 1.6 || distTo(RIVER, cx, cz) < 1.6) col.copy(sand)
+    else if (cy > 1.6) col.copy(high)
+    else col.copy(greens[Math.abs(Math.floor(cx * 1.7 + cz * 2.3)) % greens.length])
+    for (let k = 0; k < 3; k++) colors.set([col.r, col.g, col.b], (f + k) * 3)
+  }
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  terrainGeo.computeVertexNormals()
+  const terrain = new THREE.Mesh(terrainGeo, keep(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 })))
+  terrain.receiveShadow = !opts.light
+  scene.add(terrain)
+
+  /* ---------- water ---------- */
+  const waterMat = keep(new THREE.MeshStandardMaterial({ color: '#5e9cff', roughness: 0.3, metalness: 0.05, transparent: true, opacity: 0.88 }))
+  const water = new THREE.Mesh(keep(new THREE.PlaneGeometry(W + 80, D + 80)), waterMat)
   water.rotation.x = -Math.PI / 2
-  water.position.y = -0.05
-  water.receiveShadow = !opts.light
+  water.position.y = -0.3
   scene.add(water)
 
-  const layout = opts.tall ? TALL : WIDE
-  const houseGeo = keep(houseGeometry())
-  const boxGeo = keep(new THREE.BoxGeometry(1, 1, 1))
-  const coneGeo = keep(new THREE.ConeGeometry(0.26, 0.75, 5)); coneGeo.translate(0, 0.37, 0)
-  const cylGeo = keep(new THREE.CylinderGeometry(0.5, 0.5, 1, 8))
-  const white = mat('#ffffff')
-  const sand = mat('#f6eedb')
-  const treeMat = mat('#4fb594', { roughness: 1 })
+  /* ---------- shared shapes ---------- */
+  const box = keep(new THREE.BoxGeometry(1, 1, 1))
+  const cyl = keep(new THREE.CylinderGeometry(0.5, 0.5, 1, 10))
+  const cone = keep(new THREE.ConeGeometry(0.5, 1, 6))
+  const prism = keep(prismGeometry())
+  const house = keep(houseGeometry())
+  const sphere = keep(new THREE.IcosahedronGeometry(0.5, 0))
+  const white = mat('#ffffff'), grey = mat('#d9d6e0'), dark = mat('#3d3a4a'), road = mat('#bdbac6', { roughness: 1 })
+  const gold = mat('#ffc83d', { metalness: 0.35, roughness: 0.45 })
+  const glass = mat('#b9d6ff', { roughness: 0.25, metalness: 0.2 })
 
-  type Island = { id: PersonaId; group: THREE.Group; base: THREE.Vector3; lift: number; liftTo: number }
-  const isles: Island[] = []
+  const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, [x, y, z]: number[], [sx, sy, sz]: number[] = [1, 1, 1], ry = 0) => {
+    const o = new THREE.Mesh(geo, m)
+    o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.rotation.y = ry
+    parent.add(o)
+    return o
+  }
+  /** a box standing on y, centred on x/z */
+  const block = (parent: THREE.Object3D, m: THREE.Material, x: number, z: number, w: number, h: number, d: number, y = 0, ry = 0) =>
+    add(parent, box, m, [x, y + h / 2, z], [w, h, d], ry)
 
-  for (const [i, spec] of islands.entries()) {
-    const [x, z] = layout[spec.id] ?? [0, 0]
+  /* ---------- roads (flat strips following the ground) ---------- */
+  const roadLines: P[][] = [
+    [[-13, 2], [-8, 6.5], [-1.5, 10.5]],
+    [[-1.5, 10.5], [2.5, 5], [5, 1], [8.5, -0.5], [12, -2], [16.5, -2.5]],
+    [[-13, 2], [-16, -3], [-14, -6.5]],
+    [[-1.5, 10.5], [-6, 16], [-12, 26]],
+    [[16.5, -2.5], [22, 2], [32, 4]],
+    [[-13, 2], [-24, 4], [-36, 3]],
+  ]
+  const roadCurves = roadLines.map((l) => new THREE.CatmullRomCurve3(l.map(([x, z]) => new THREE.Vector3(x, 0, z))))
+  const BRIDGE = new THREE.Vector3(6.6, 0, 0.2)
+  {
+    const pieces: THREE.Matrix4[] = []
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0)
+    for (const c of roadCurves) {
+      const n = Math.ceil(c.getLength() / 0.5)
+      for (let i = 0; i < n; i++) {
+        const p = c.getPointAt(i / n), t = c.getTangentAt(i / n)
+        if (p.distanceTo(BRIDGE) < 2.2) continue // the bridge carries the road here
+        const y = Math.max(groundHeight(p.x, p.z), 0.05) + 0.05
+        q.setFromAxisAngle(up, Math.atan2(t.x, t.z))
+        pieces.push(m4.clone().compose(new THREE.Vector3(p.x, y, p.z), q, new THREE.Vector3(1.1, 0.08, 0.62)))
+      }
+    }
+    const roads = new THREE.InstancedMesh(box, road, pieces.length)
+    pieces.forEach((m, i) => roads.setMatrixAt(i, m))
+    roads.receiveShadow = !opts.light
+    scene.add(roads)
+  }
+  // the bridge over the river
+  {
+    const b = new THREE.Group()
+    const t = roadCurves[1].getTangentAt(0.48)
+    b.position.set(BRIDGE.x, 0.35, BRIDGE.z)
+    b.rotation.y = Math.atan2(t.x, t.z)
+    block(b, grey, 0, 0, 1.5, 0.2, 5.2)
+    block(b, white, 0.7, 0, 0.08, 0.35, 5.2, 0.2)
+    block(b, white, -0.7, 0, 0.08, 0.35, 5.2, 0.2)
+    for (const z of [-1.2, 1.2]) block(b, grey, 0, z, 1.2, 1, 0.4, -0.95)
+    scene.add(castAll(b))
+  }
+
+  /* ---------- forests ---------- */
+  const avoid = (x: number, z: number, pad = 0) =>
+    z < coastZ(x) + 1.8 || distTo(RIVER, x, z) < 2.3 + pad ||
+    Object.values(DISTRICTS).some((d) => Math.hypot(x - d.x, z - d.z) < d.r + 1.2 + pad) ||
+    roadLines.some((l) => distTo(l, x, z) < 1.1 + pad) ||
+    Math.hypot(x - LETTERS.x, z - LETTERS.z) < 4.2
+  {
+    const nTrees = opts.light ? 380 : 900
+    const pine = keep(new THREE.ConeGeometry(0.42, 1.3, 6)); pine.translate(0, 0.85, 0)
+    const trunkless = keep(new THREE.IcosahedronGeometry(0.55, 0)); trunkless.translate(0, 0.75, 0)
+    const shades = ['#2f9a5b', '#3aa865', '#23864e', '#4cb874'].map((c) => new THREE.Color(c))
+    const tMat = mat('#ffffff', { roughness: 1 })
+    const pines = new THREE.InstancedMesh(pine, tMat, nTrees)
+    const rounds = new THREE.InstancedMesh(trunkless, tMat, Math.floor(nTrees / 3))
+    const r = rng(42)
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3()
+    let np = 0, nr = 0
+    for (let tries = 0; tries < nTrees * 30 && (np < nTrees || nr < rounds.count); tries++) {
+      const x = -38 + r() * 76, z = -14 + r() * 42
+      if (avoid(x, z)) continue
+      const patch = Math.sin(x * 0.23 + 0.4) * Math.cos(z * 0.29 - 0.6) + 0.35 * Math.sin(x * 0.7 + z * 0.5)
+      if (patch < 0.1 && r() > 0.12) continue
+      const k = 0.7 + r() * 0.75
+      p.set(x, groundHeight(x, z) - 0.05, z); q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6); s.set(k, k * (0.85 + r() * 0.5), k)
+      const c = shades[Math.floor(r() * shades.length)]
+      if (r() < 0.75 && np < nTrees) { pines.setMatrixAt(np, m4.compose(p, q, s)); pines.setColorAt(np++, c) }
+      else if (nr < rounds.count) { rounds.setMatrixAt(nr, m4.compose(p, q, s)); rounds.setColorAt(nr++, c) }
+    }
+    pines.count = np; rounds.count = nr
+    pines.castShadow = rounds.castShadow = !opts.light
+    scene.add(pines, rounds)
+  }
+
+  /* ---------- wind turbines on the coast ---------- */
+  const rotors: THREE.Group[] = []
+  for (const x of [-30, -25, -20.5, 26, 30.5]) {
+    const z = coastZ(x) + 2.8
+    const t = new THREE.Group()
+    t.position.set(x, groundHeight(x, z), z)
+    add(t, cyl, white, [0, 1.7, 0], [0.12, 3.4, 0.12])
+    const rotor = new THREE.Group()
+    rotor.position.set(0, 3.4, 0.12)
+    for (let b = 0; b < 3; b++) { const bl = add(rotor, box, white, [0, 0.7, 0], [0.1, 1.4, 0.03]); bl.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), (b * Math.PI * 2) / 3); bl.rotation.z = (b * Math.PI * 2) / 3 }
+    t.add(rotor)
+    rotors.push(rotor)
+    scene.add(castAll(t))
+  }
+
+  /* ---------- the giant "hoi" on the hill (logo colours) ---------- */
+  {
     const g = new THREE.Group()
-    g.position.set(x, 0, z)
-    g.userData.id = spec.id
+    const y0 = groundHeight(LETTERS.x, LETTERS.z) - 0.1
+    g.position.set(LETTERS.x, y0, LETTERS.z)
+    g.rotation.y = 0.18
+    const purple = mat('#9a00ff'), teal = mat('#00d7b8'), blue = mat('#003efe')
+    // h
+    block(g, purple, -3.1, 0, 0.8, 3.4, 0.8)
+    block(g, purple, -1.7, 0, 0.8, 2.2, 0.8)
+    block(g, purple, -2.4, 0, 1.6, 0.8, 0.8, 1.4)
+    // o: the hoi house, as in the logo
+    add(g, house, teal, [0.1, 0, 0], [2.2, 2.4, 1])
+    add(g, box, mat('#ffffff'), [0.1, 1.05, 0.42], [0.45, 0.9, 0.05])
+    // i
+    block(g, blue, 2.2, 0, 0.8, 2.2, 0.8)
+    add(g, sphere, blue, [2.2, 2.9, 0], [0.9, 0.9, 0.9])
+    scene.add(castAll(g))
+  }
+
+  /* ---------- districts ---------- */
+  type District = { id: PersonaId; group: THREE.Group; ring: THREE.MeshStandardMaterial; base: THREE.Color; lift: number; liftTo: number }
+  const districts: District[] = []
+  const smoke: { mesh: THREE.Mesh; origin: THREE.Vector3; t: number }[] = []
+  const trucks: { mesh: THREE.Group; t: number; speed: number }[] = []
+
+  for (const spec of islands) {
+    const d = DISTRICTS[spec.id]
+    if (!d) continue
     const t = spec.theme
-    const grass = new THREE.Color(t.c1).lerp(new THREE.Color('#ffffff'), 0.62)
-    const accent = mat(t.accent), c1 = mat(t.c1), c3 = mat(t.c3)
-    const r = rng(11 + i * 17)
-
-    // ground: sand ring, then the grass top
-    g.add(new THREE.Mesh(keep(slabGeometry(RADIUS + 0.45, 0.06, 0.5, 3 + i, 0.15)), sand))
-    g.add(new THREE.Mesh(keep(slabGeometry(RADIUS, 0.32, 0.5, 9 + i, 0.18)), mat(grass)))
-    const top = 0.32 + 0.14
-
-    const put = (mesh: THREE.Object3D, px: number, pz: number, y = top) => { mesh.position.set(px, y, pz); g.add(mesh); return mesh }
-    const box = (w: number, h: number, d: number, m: THREE.Material, px: number, pz: number, y = top) => {
-      const b = new THREE.Mesh(boxGeo, m); b.scale.set(w, h, d); b.position.set(px, y + h / 2, pz); g.add(b); return b
+    const g = new THREE.Group()
+    g.position.set(d.x, 0.3, d.z)
+    g.userData.id = spec.id
+    const ringMat = keep(new THREE.MeshStandardMaterial({ color: t.c1, roughness: 0.6, flatShading: true, emissive: t.c1, emissiveIntensity: 0 }))
+    add(g, keep(plotGeometry(d.r + 0.5, d.x * 7, 0.12)), ringMat, [0, -0.02, 0])
+    add(g, keep(plotGeometry(d.r, d.z * 5 + 3, 0.16)), mat('#eeebf3', { roughness: 1 }), [0, 0, 0])
+    const top = 0.16
+    const accent = mat(t.accent), c1 = mat(t.c1), c2 = mat(t.c2), c3 = mat(t.c3)
+    const r = rng(Math.round(d.x * 13 + d.z * 7 + 99))
+    // plaza trees on every plot
+    for (let k = 0; k < 6; k++) {
+      const a = r() * Math.PI * 2, rr = d.r - 0.9
+      add(g, cone, mat('#3aa865'), [Math.cos(a) * rr, top + 0.6, Math.sin(a) * rr * 0.9], [0.7, 1.2, 0.7])
     }
 
-    // small houses around the edge
-    const houseMats = [white, white, c1, c3]
-    for (let k = 0; k < 9; k++) {
-      const a = r() * Math.PI * 2, d = 1.5 + r() * 1.3
-      const h = new THREE.Mesh(houseGeo, houseMats[k % houseMats.length])
-      const s = 0.42 + r() * 0.3
-      h.scale.set(s, s * (0.9 + r() * 0.6), s)
-      h.rotation.y = (r() - 0.5) * 1.2
-      put(h, Math.cos(a) * d, Math.sin(a) * d * 0.85)
-    }
-    // trees
-    for (let k = 0; k < 7; k++) {
-      const a = r() * Math.PI * 2, d = 1.9 + r() * 1.1
-      const tr = new THREE.Mesh(coneGeo, treeMat)
-      const s = 0.7 + r() * 0.6
-      tr.scale.set(s, s, s)
-      put(tr, Math.cos(a) * d, Math.sin(a) * d * 0.85)
-    }
-
-    // landmark
     if (spec.id === 'founder') {
-      const hq = new THREE.Mesh(houseGeo, accent)
-      hq.scale.set(1.7, 2.1, 1.7)
-      put(hq, -0.2, 0.1)
-      const win = new THREE.Mesh(boxGeo, white); win.scale.set(0.2, 0.42, 0.04); win.position.set(0, 0.55, 0.41)
-      hq.add(win)
+      // launch pad and rocket
+      add(g, cyl, dark, [-2.4, top + 0.1, -1.4], [2.4, 0.2, 2.4])
+      const rocket = new THREE.Group(); rocket.position.set(-2.4, top + 0.2, -1.4)
+      add(rocket, cyl, white, [0, 1.6, 0], [0.7, 2.8, 0.7])
+      add(rocket, cone, accent, [0, 3.45, 0], [0.7, 0.9, 0.7])
+      add(rocket, cyl, c1, [0, 2.2, 0.33], [0.32, 0.06, 0.32]).rotation.x = Math.PI / 2
+      for (let f = 0; f < 3; f++) { const fin = add(rocket, box, c3, [0, 0.45, 0], [0.06, 0.9, 0.55]); fin.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), (f * Math.PI * 2) / 3).add(new THREE.Vector3(Math.sin((f * Math.PI * 2) / 3) * 0.38, 0, Math.cos((f * Math.PI * 2) / 3) * 0.38)); fin.rotation.y = (f * Math.PI * 2) / 3 }
+      g.add(rocket)
+      // launch tower
+      block(g, grey, -1.2, -1.4, 0.35, 3.6, 0.35, top)
+      for (const y of [1, 2, 3]) block(g, grey, -1.7, -1.4, 0.8, 0.08, 0.1, top + y)
+      // maker space with a sawtooth roof
+      block(g, white, 1.6, 1.2, 3.2, 1.1, 2.2, top)
+      for (let k = 0; k < 4; k++) add(g, prism, k % 2 ? c1 : accent, [0.4 + k * 0.8, top + 1.1, 1.2], [0.8, 0.55, 2.2])
+      // the hoi workshop
+      const hq = add(g, house, accent, [1.4, top, -1.8], [1.8, 2.3, 1.6])
+      add(hq, box, white, [0, 0.55, 0.41], [0.2, 0.42, 0.04])
       // crane
-      box(0.14, 3.2, 0.14, c3, 1.1, -0.7)
-      box(2.2, 0.12, 0.14, c3, 0.5, -0.7, top + 3.1)
-      box(0.04, 0.9, 0.04, white, -0.4, -0.7, top + 2.25)
-      box(0.3, 0.25, 0.3, c1, -0.4, -0.7, top + 2.0)
+      block(g, c3, 3.4, -1.4, 0.18, 4.2, 0.18, top)
+      block(g, c3, 2.4, -1.4, 2.6, 0.16, 0.18, top + 4.05)
+      block(g, white, 1.4, -1.4, 0.04, 1.2, 0.04, top + 2.9)
+      // small startup houses
+      for (let k = 0; k < 6; k++) {
+        const a = -0.6 + k * 0.5, rr = 3.6 + (k % 2) * 0.6
+        const h = add(g, house, [white, c1, white, c2][k % 4], [Math.cos(a + 1.9) * rr, top, Math.sin(a + 1.9) * rr], [0.7, 0.8 + (k % 3) * 0.2, 0.7], r() * 2)
+        h.castShadow = true
+      }
     } else if (spec.id === 'investor') {
-      const towers: [number, number, number, THREE.Material][] = [[-0.6, -0.2, 2.6, white], [0.15, -0.6, 3.4, c1], [0.8, 0.1, 2.1, white], [-0.1, 0.6, 1.6, c3]]
-      for (const [tx, tz, th, m] of towers) {
-        box(0.7, th, 0.7, m, tx, tz)
-        box(0.72, 0.06, 0.72, accent, tx, tz, top + th * 0.62)
+      // glass towers with bands
+      const towers: [number, number, number, number][] = [[-1.6, -1.2, 4.6, 1.1], [-0.2, -2, 6, 1.2], [1.3, -1.1, 3.8, 1], [0.5, 0.2, 2.8, 0.9]]
+      for (const [x, z, h, w] of towers) {
+        block(g, glass, x, z, w, h, w, top)
+        for (let y = 0.5; y < h; y += 0.6) block(g, white, x, z, w + 0.04, 0.08, w + 0.04, top + y)
+        block(g, accent, x, z, w * 0.7, 0.2, w * 0.7, top + h)
       }
-      // lighthouse on the shore
-      const lh = new THREE.Group()
-      for (let k = 0; k < 4; k++) {
-        const ring = new THREE.Mesh(cylGeo, k % 2 ? white : accent)
-        ring.scale.set(0.5 - k * 0.05, 0.55, 0.5 - k * 0.05); ring.position.y = 0.27 + k * 0.55; lh.add(ring)
-      }
-      const lamp = new THREE.Mesh(keep(new THREE.ConeGeometry(0.32, 0.45, 8)), accent); lamp.position.y = 2.6; lh.add(lamp)
-      const glow = new THREE.Mesh(boxGeo, keep(new THREE.MeshBasicMaterial({ color: '#fff3b0' }))); glow.scale.set(0.3, 0.2, 0.3); glow.position.y = 2.3; lh.add(glow)
-      put(lh, 2.3, 1.4)
+      // the bank: steps, columns, roof, pediment
+      const bank = new THREE.Group(); bank.position.set(-1, top, 2.2)
+      block(bank, white, 0, 0, 3.4, 0.25, 2.2)
+      for (let k = 0; k < 6; k++) add(bank, cyl, white, [-1.35 + k * 0.54, 0.85, 0.75], [0.24, 1.2, 0.24])
+      block(bank, grey, 0, -0.25, 3, 1.2, 1.2, 0.25)
+      block(bank, white, 0, 0, 3.4, 0.22, 2.2, 1.45)
+      add(bank, prism, accent, [0, 1.67, 0], [3.4, 0.6, 2.2]).rotation.y = Math.PI / 2
+      g.add(bank)
+      // gold coin stacks
+      for (const [x, z, n] of [[2.4, 1.6, 7], [3, 2.4, 5], [1.9, 2.6, 9]] as const) for (let k = 0; k < n; k++) add(g, cyl, gold, [x, top + 0.06 + k * 0.13, z], [0.7, 0.11, 0.7])
+      // fountain plaza
+      add(g, cyl, white, [2.6, top + 0.05, -1.6], [1.6, 0.12, 1.6])
+      add(g, cyl, mat('#5e9cff', { roughness: 0.3 }), [2.6, top + 0.12, -1.6], [1.3, 0.04, 1.3])
     } else {
-      // harbour: warehouses, containers, a pier and a moored ship
-      box(1.7, 0.75, 0.9, white, -0.7, -0.6)
-      box(1.7, 0.08, 0.95, accent, -0.7, -0.6, top + 0.75)
-      box(1.3, 0.65, 0.8, c1, 0.5, -1.4)
-      const cont = [accent, c1, white, c3, mat('#ffb703')]
-      for (let k = 0; k < 6; k++) box(0.55, 0.28, 0.26, cont[k % cont.length], 0.6 + (k % 2) * 0.6, 0.4 + Math.floor(k / 2) * 0.3, top + (k % 3 === 2 ? 0.28 : 0))
-      box(0.5, 0.1, 2.0, sand, 2.6, 0.9, 0.05) // pier
-      const ship = new THREE.Group()
-      const hull = new THREE.Mesh(boxGeo, c3); hull.scale.set(0.5, 0.22, 1.5); ship.add(hull)
-      for (let k = 0; k < 4; k++) { const b = new THREE.Mesh(boxGeo, cont[k]); b.scale.set(0.2, 0.16, 0.3); b.position.set(k % 2 ? 0.1 : -0.1, 0.2, -0.3 + Math.floor(k / 2) * 0.32); ship.add(b) }
-      ship.position.set(3.3, 0.07, 1.1)
-      g.add(ship)
+      // factory with sawtooth roofs and chimneys
+      block(g, white, -0.8, -1.8, 4, 1.3, 2.6, top)
+      for (let k = 0; k < 5; k++) add(g, prism, k % 2 ? grey : accent, [-2.4 + k * 0.8, top + 1.3, -1.8], [0.8, 0.6, 2.6])
+      for (const x of [0.6, 1.4]) {
+        add(g, cyl, white, [x, top + 1.9, -3.2], [0.45, 3.8, 0.45])
+        add(g, cyl, accent, [x, top + 3.3, -3.2], [0.47, 0.35, 0.47])
+        for (let k = 0; k < 4; k++) {
+          const puff = add(scene, sphere, mat('#ffffff', { transparent: true, opacity: 0.85 }), [0, 0, 0], [0.5, 0.5, 0.5])
+          smoke.push({ mesh: puff, origin: new THREE.Vector3(d.x + x, 0.3 + top + 3.9, d.z - 3.2), t: k / 4 })
+        }
+      }
+      // warehouses
+      for (const [x, z] of [[2.4, 0.6], [2.4, 2.2]] as const) { block(g, grey, x, z, 2.4, 0.9, 1.2, top); add(g, prism, c1, [x, top + 0.9, z], [1.2, 0.4, 2.4]).rotation.y = Math.PI / 2 }
+      // container yard at the riverside, with a gantry crane
+      const cont = [accent, c1, c2, white, mat('#ffb703'), c3]
+      for (let k = 0; k < 18; k++) block(g, cont[k % cont.length], -3.6 + (k % 3) * 0.75, 0.2 + Math.floor(k / 6) * 0.4, 0.7, 0.32, 0.36, top + (Math.floor(k / 3) % 2) * 0.32)
+      for (const z of [-0.6, 1.8]) block(g, accent, -5.2, z, 0.18, 2.8, 0.18, top)
+      block(g, accent, -5.2, 0.6, 0.2, 0.2, 2.8, top + 2.8)
+      block(g, accent, -6.4, 0.6, 3.6, 0.16, 0.2, top + 2.65)
+      // offices
+      block(g, glass, -1.6, 2.4, 1.6, 1.8, 1.4, top)
+      block(g, white, -1.6, 2.4, 1.7, 0.1, 1.5, top + 1.8)
     }
 
-    scene.add(shadow(g))
-    isles.push({ id: spec.id, group: g, base: g.position.clone(), lift: 0, liftTo: 0 })
+    // trucks on the road between the bridge and the company
+    if (spec.id === 'company') {
+      for (let k = 0; k < 2; k++) {
+        const tr = new THREE.Group()
+        block(tr, white, 0, 0.3, 0.42, 0.42, 0.5)
+        block(tr, accent, 0, -0.25, 0.4, 0.36, 0.42)
+        scene.add(castAll(tr))
+        trucks.push({ mesh: tr, t: 0.55 + k * 0.2, speed: k % 2 ? -0.018 : 0.018 })
+      }
+    }
+
+    scene.add(castAll(g))
+    districts.push({ id: spec.id, group: g, ring: ringMat, base: new THREE.Color(t.c1), lift: 0, liftTo: 0 })
   }
 
-  /* bridges between the islands */
-  for (let i = 0; i < isles.length; i++) {
-    const a = isles[i].base, b = isles[(i + 1) % isles.length].base
-    if (isles.length < 3 && i === isles.length - 1) break
-    const len = a.distanceTo(b) - RADIUS * 1.6
-    if (len <= 0) continue
-    const br = new THREE.Mesh(boxGeo, sand)
-    br.scale.set(0.45, 0.1, len)
-    br.position.copy(a).lerp(b, 0.5).setY(0.08)
-    br.lookAt(b.x, 0.08, b.z)
-    scene.add(shadow(br))
+  /* ---------- boats ---------- */
+  const riverCurve = new THREE.CatmullRomCurve3(RIVER.slice(0, 6).map(([x, z]) => new THREE.Vector3(x, -0.24, z)))
+  const ship = new THREE.Group()
+  block(ship, mat('#9a00ff'), 0, 0, 0.7, 0.3, 2, -0.1)
+  const shipCont = ['#00d7b8', '#ffffff', '#003efe', '#ffb703']
+  for (let k = 0; k < 6; k++) block(ship, mat(shipCont[k % 4]), k % 2 ? 0.17 : -0.17, -0.55 + Math.floor(k / 2) * 0.42, 0.3, 0.24, 0.38, 0.2)
+  block(ship, white, 0, 0.75, 0.5, 0.45, 0.35, 0.2)
+  scene.add(castAll(ship))
+  const sailboats: { g: THREE.Group; a: number; r: number; cx: number; cz: number; speed: number }[] = []
+  for (const [i, colr] of ['#00d7b8', '#ff5d8f', '#ffffff'].entries()) {
+    const s = new THREE.Group()
+    block(s, white, 0, 0, 0.3, 0.12, 0.9, -0.05)
+    const sailGeo = keep(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1.1), new THREE.Vector2(0.6, 0)])))
+    const sail = new THREE.Mesh(sailGeo, mat(colr, { side: THREE.DoubleSide }))
+    sail.position.set(0, 0.08, 0.15); sail.rotation.y = Math.PI / 2
+    s.add(sail)
+    scene.add(castAll(s))
+    sailboats.push({ g: s, a: i * 2.1, r: 6 + i * 3, cx: -6 + i * 9, cz: -19 + i * 1.5, speed: 0.05 + i * 0.015 })
   }
 
-  /* boats: a ferry between the islands, a sailboat around them */
-  const ferry = new THREE.Group()
-  const fh = new THREE.Mesh(boxGeo, white); fh.scale.set(0.42, 0.16, 0.9); ferry.add(fh)
-  const fc = new THREE.Mesh(boxGeo, mat(islands[0]?.theme.accent ?? '#8a00e6')); fc.scale.set(0.3, 0.2, 0.4); fc.position.y = 0.17; ferry.add(fc)
-  scene.add(shadow(ferry))
-  const ferryPath = new THREE.CatmullRomCurve3(isles.map((s) => s.base.clone().setY(0.04).multiplyScalar(0.62)), true)
-  const sail = new THREE.Group()
-  const sb = new THREE.Mesh(boxGeo, white); sb.scale.set(0.22, 0.08, 0.6); sail.add(sb)
-  const sm = new THREE.Mesh(keep(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0, 0.7), new THREE.Vector2(0.4, 0)]))), mat(islands[1]?.theme.c1 ?? '#34d399', { side: THREE.DoubleSide }))
-  sm.position.set(0, 0.05, 0.1); sm.rotation.y = Math.PI / 2; sail.add(sm)
-  scene.add(sail)
+  /* ---------- the hoi blimp ---------- */
+  const blimp = new THREE.Group()
+  add(blimp, sphere, white, [0, 0, 0], [3.2, 1.2, 1.2]).geometry = keep(new THREE.SphereGeometry(0.5, 16, 10))
+  add(blimp, box, mat('#9a00ff'), [-1.6, 0, 0], [0.5, 0.7, 0.06])
+  add(blimp, box, mat('#9a00ff'), [-1.6, 0, 0], [0.5, 0.06, 0.7])
+  add(blimp, box, dark, [0.2, -0.65, 0], [0.7, 0.22, 0.3])
+  {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 128
+    const x = c.getContext('2d')!
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, 512, 128)
+    x.fillStyle = '#8a00e6'; x.font = '900 72px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'
+    x.fillText('hoi startup factory', 256, 66)
+    const tex = keep(new THREE.CanvasTexture(c)); tex.colorSpace = THREE.SRGBColorSpace
+    const bannerMat = keep(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }))
+    const banner = new THREE.Mesh(keep(new THREE.PlaneGeometry(2.6, 0.65)), bannerMat)
+    banner.position.set(0, 0, 0.62)
+    blimp.add(banner)
+    const back = banner.clone(); back.position.z = -0.62; back.rotation.y = Math.PI; blimp.add(back)
+  }
+  scene.add(blimp)
 
-  /* camera: fit all islands, slightly from above; visitors can turn it a little */
+  /* ---------- camera ---------- */
   const controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
   controls.dampingFactor = 0.08
   controls.enableZoom = false
   controls.enablePan = false
   controls.minPolarAngle = 0.55
-  controls.maxPolarAngle = 1.1
-  controls.minAzimuthAngle = -0.6
-  controls.maxAzimuthAngle = 0.6
+  controls.maxPolarAngle = 1.12
   controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }
   canvas.style.touchAction = 'pan-y' // vertical swipes keep scrolling the page
 
+  /* Wide screens: the sea at the back. Tall screens: the land turned a quarter,
+     so the three districts run down the screen. */
   let width = 1, height = 1
-  const centre = new THREE.Vector3(0, 0, 0)
-  const span = { x: opts.tall ? 6 : 11.5, z: opts.tall ? 11.5 : 7.5 }
-  const home = () => {
-    const aspect = width / height
+  const view = () => {
+    const tall = width / height < 0.9
+    const azimuth = tall ? -Math.PI / 2 : 0
+    const target = tall ? new THREE.Vector3(2, 0, 3) : new THREE.Vector3(1.5, 0, 1.5)
+    const halfAcross = tall ? 11 : 25 // what must fit across the screen
+    const halfDeep = tall ? 25 : 14 // and up and down
     const vfov = THREE.MathUtils.degToRad(camera.fov)
-    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
-    const dist = Math.max(span.x / Math.tan(hfov / 2), (span.z * 0.85) / Math.tan(vfov / 2)) + 4
-    return centre.clone().add(new THREE.Vector3().setFromSphericalCoords(dist, 0.92, 0))
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * (width / height))
+    const dist = Math.max(halfAcross / Math.tan(hfov / 2), (halfDeep * 0.72) / Math.tan(vfov / 2))
+    return { target, azimuth, dist, polar: tall ? 0.8 : 0.95 }
   }
-  controls.target.copy(centre)
-  camera.position.copy(home())
-  controls.update()
+  const homeCam = (v = view()) => v.target.clone().add(new THREE.Vector3().setFromSphericalCoords(v.dist, v.polar, v.azimuth))
+  const limits = (az: number) => { controls.minAzimuthAngle = az - 0.5; controls.maxAzimuthAngle = az + 0.5 }
 
   let flight: { from: THREE.Vector3; to: THREE.Vector3; fromCam: THREE.Vector3; toCam: THREE.Vector3; t0: number; ms: number } | null = null
   let atHome = true
   const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
   function flyTo(id: PersonaId | null) {
-    const isle = isles.find((s) => s.id === id)
-    atHome = !isle
-    const to = isle ? isle.base.clone().setY(0.6) : centre.clone()
-    const toCam = isle ? to.clone().add(new THREE.Vector3().subVectors(camera.position, controls.target).setLength(opts.tall ? 17 : 14)) : home()
+    const dd = id ? DISTRICTS[id] : null
+    atHome = !dd
+    const v = view()
+    const to = dd ? new THREE.Vector3(dd.x, 1, dd.z) : v.target
+    const toCam = dd ? to.clone().add(new THREE.Vector3().subVectors(camera.position, controls.target).setLength(16)) : homeCam(v)
     if (opts.reduced) { controls.target.copy(to); camera.position.copy(toCam); controls.update(); return }
-    flight = { from: controls.target.clone(), to, fromCam: camera.position.clone(), toCam, t0: performance.now(), ms: 950 }
+    flight = { from: controls.target.clone(), to, fromCam: camera.position.clone(), toCam, t0: performance.now(), ms: 1000 }
   }
 
-  /* hover: the island rises a little */
+  /* ---------- hover and picking ---------- */
   let hovered: PersonaId | null = null
   function hover(id: PersonaId | null) {
     hovered = id
-    for (const s of isles) s.liftTo = s.id === id ? 1 : 0
+    for (const d of districts) d.liftTo = d.id === id ? 1 : 0
   }
   const ray = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
   function pickAt(x: number, y: number) {
     ndc.set((x / width) * 2 - 1, -(y / height) * 2 + 1)
     ray.setFromCamera(ndc, camera)
-    const hit = ray.intersectObjects(isles.map((s) => s.group), true)[0]
+    const hit = ray.intersectObjects(districts.map((d) => d.group), true)[0]
     let o: THREE.Object3D | null = hit?.object ?? null
     while (o && !o.userData.id) o = o.parent
     return (o?.userData.id as PersonaId | undefined) ?? null
   }
 
-  const anchors = isles.map((s) => ({ id: s.id, v: s.base.clone().setY(opts.tall ? 3.9 : 4.4) }))
+  const anchors = districts.map((d) => ({ id: d.id, v: new THREE.Vector3(DISTRICTS[d.id].x, d.id === 'investor' ? 7.2 : 5.4, DISTRICTS[d.id].z) }))
   const tmp = new THREE.Vector3()
   function labelPositions() {
     const out: Partial<Record<PersonaId, { x: number; y: number }>> = {}
@@ -289,11 +538,46 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     return out
   }
 
+  /* ---------- animation ---------- */
   let interacting = false
   controls.addEventListener('start', () => { interacting = true; flight = null; atHome = false })
   controls.addEventListener('end', () => { interacting = false })
   const t0 = performance.now()
   let last = t0
+  let shipT = 0.1, shipDir = 1
+  const sph = new THREE.Spherical(), off = new THREE.Vector3()
+
+  function place(time: number, dt: number) {
+    rotors.forEach((r, i) => { r.rotation.z += dt * (1.2 + (i % 3) * 0.25) })
+    shipT += dt * 0.02 * shipDir
+    if (shipT > 0.95 || shipT < 0.02) shipDir *= -1
+    const sp = riverCurve.getPointAt(shipT), st = riverCurve.getTangentAt(shipT)
+    ship.position.copy(sp); ship.rotation.y = Math.atan2(st.x, st.z) + (shipDir < 0 ? Math.PI : 0)
+    for (const s of sailboats) {
+      const a = s.a + time * s.speed
+      s.g.position.set(s.cx + Math.cos(a) * s.r, -0.28 + Math.sin(time * 1.6 + s.a) * 0.03, s.cz + Math.sin(a) * s.r * 0.35)
+      s.g.rotation.y = -a
+    }
+    const ba = time * 0.04
+    blimp.position.set(Math.sin(ba) * 24, 11 + Math.sin(time * 0.5) * 0.3, -6 + Math.cos(ba) * 6)
+    blimp.rotation.y = -ba + (Math.cos(ba) > 0 ? 0 : Math.PI) + Math.PI / 2
+    for (const p of smoke) {
+      p.t = (p.t + dt * 0.18) % 1
+      p.mesh.position.copy(p.origin).add(new THREE.Vector3(p.t * 1.4, p.t * 2.4, p.t * 0.3))
+      p.mesh.scale.setScalar(0.35 + p.t * 0.9)
+      ;(p.mesh.material as THREE.MeshStandardMaterial).opacity = 0.85 * (1 - p.t)
+    }
+    const c = roadCurves[1]
+    for (const tr of trucks) {
+      tr.t += dt * tr.speed
+      if (tr.t > 0.97) tr.t = 0.55
+      if (tr.t < 0.55) tr.t = 0.97
+      const p = c.getPointAt(tr.t), tan = c.getTangentAt(tr.t)
+      const onBridge = p.distanceTo(BRIDGE) < 2.6
+      tr.mesh.position.set(p.x, onBridge ? 0.48 : Math.max(groundHeight(p.x, p.z), 0.05) + 0.1, p.z)
+      tr.mesh.rotation.y = Math.atan2(tan.x, tan.z) + (tr.speed < 0 ? Math.PI : 0)
+    }
+  }
 
   function frame(now: number) {
     const dt = Math.min(0.05, (now - last) / 1000)
@@ -306,32 +590,27 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
       if (t >= 1) flight = null
     }
     controls.update()
-    for (const s of isles) {
-      s.lift += (s.liftTo - s.lift) * Math.min(1, dt * 10)
-      s.group.position.y = s.base.y + s.lift * 0.35
-      s.group.scale.setScalar(1 + s.lift * 0.05)
+    for (const d of districts) {
+      d.lift += (d.liftTo - d.lift) * Math.min(1, dt * 10)
+      d.group.position.y = 0.3 + d.lift * 0.35
+      d.ring.emissiveIntensity = d.lift * 0.6
     }
+    const time = (now - t0) / 1000
     if (!opts.reduced) {
-      const time = (now - t0) / 1000
-      // a slow drift while nobody is touching it, like a model on a turntable
       if (atHome && !interacting && !flight) {
-        const sway = Math.sin(time * 0.25) * 0.12
-        const off = new THREE.Vector3().subVectors(camera.position, controls.target)
-        const sph = new THREE.Spherical().setFromVector3(off)
-        sph.theta += (sway - sph.theta) * 0.02
-        camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sph))
+        // a slow drift while nobody is touching it
+        off.subVectors(camera.position, controls.target)
+        sph.setFromVector3(off)
+        const want = view().azimuth + Math.sin(time * 0.2) * 0.1
+        sph.theta += (want - sph.theta) * 0.02
+        camera.position.copy(controls.target).add(off.setFromSpherical(sph))
       }
-      const ft = (time * 0.025) % 1
-      ferry.position.copy(ferryPath.getPointAt(ft))
-      const tan = ferryPath.getTangentAt(ft)
-      ferry.rotation.y = Math.atan2(tan.x, tan.z)
-      ferry.position.y = 0.04 + Math.sin(time * 2) * 0.02
-      const a = time * 0.12
-      const R = opts.tall ? 7.5 : 12.5
-      sail.position.set(Math.cos(a) * R, -0.02 + Math.sin(time * 1.7) * 0.03, Math.sin(a) * R * 0.75)
-      sail.rotation.y = -a
-    }
-    canvas.style.cursor = hovered ? '' : 'grab' // over an island: the hoi cursor (HoiCursor.tsx) takes over
+      place(time, dt)
+    } else if (!ship.userData.placed) { place(0, 0); ship.userData.placed = true }
+    const fog = scene.fog as THREE.Fog
+    const dist = camera.position.distanceTo(controls.target)
+    fog.near = dist * 1.05; fog.far = dist * 2.3
+    canvas.style.cursor = hovered ? '' : 'grab' // over a district: the hoi cursor (HoiCursor.tsx) takes over
     renderer.render(scene, camera)
   }
 
@@ -339,8 +618,11 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     width = w; height = h
     renderer.setSize(w, h, false)
     camera.aspect = w / h
+    camera.fov = w < 640 ? 38 : 30
     camera.updateProjectionMatrix()
-    if (atHome && !flight) { controls.target.copy(centre); camera.position.copy(home()); controls.update() }
+    const v = view()
+    limits(v.azimuth)
+    if (atHome && !flight) { controls.target.copy(v.target); camera.position.copy(homeCam(v)); controls.update() }
   }
 
   return {

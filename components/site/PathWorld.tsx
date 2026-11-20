@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Persona, PersonaId } from './data'
 import type { PathWorld as World } from './harbour/pathWorld'
 import { Arrow, themeVars } from './shared'
 
 /* ------------------------------------------------------------
-   Choosing a path on landing: a small 3D world with one island
-   city per main path (founder, investor, company). Drag to look
-   around, hover a city to lift it, click it (or its label) to fly
-   there and choose that path.
+   Choosing a path on landing: a full-screen 3D landscape (see
+   harbour/pathWorld.ts) with one district per main path (founder,
+   investor, company). Drag to look around, hover a district to lift
+   it, click it (or its label) to fly there and choose that path.
+   `top` and `bottom` float over the map (the question, the other
+   options).
 
    The labels are real buttons, so it all works by keyboard and
    screen reader. three.js loads after the first paint; without
@@ -26,8 +28,10 @@ function webglAvailable() {
   }
 }
 
-export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
+export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, bottom }: {
   paths: Persona[]
+  top: ReactNode
+  bottom: ReactNode
   selected: PersonaId | null
   hint: string
   /** label next to the hoi cursor over an island */
@@ -60,7 +64,12 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
         if (!el || !at) continue
         const half = el.offsetWidth / 2 + 6
         const x = Math.min(box.clientWidth - half, Math.max(half, at.x))
-        const y = Math.max(el.offsetHeight + 12, at.y) // never cut off at the top edge
+        // keep labels clear of the question at the top and the options at the bottom
+        const topBox = box.querySelector<HTMLElement>('.path-world-top')
+        const bottomBox = box.querySelector<HTMLElement>('.path-world-bottom')
+        const minY = (topBox ? topBox.offsetTop + topBox.offsetHeight : 0) + el.offsetHeight + 16
+        const maxY = (bottomBox ? bottomBox.offsetTop : box.clientHeight) - 16
+        const y = Math.min(maxY, Math.max(minY, at.y))
         el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`
       }
     }
@@ -81,7 +90,9 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
         const light = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const tall = box.clientWidth / box.clientHeight < 0.9
-        world = createPathWorld(canvas, paths.map((p) => ({ id: p.id, theme: p.theme })), { light, reduced, tall })
+        // the haze on the horizon blends into the page background
+        const fog = getComputedStyle(box).getPropertyValue('--tint').trim() || '#f8f0ff'
+        world = createPathWorld(canvas, paths.map((p) => ({ id: p.id, theme: p.theme })), { light, reduced, tall, fog })
         worldRef.current = world
         world.resize(box.clientWidth, box.clientHeight)
         setMode('3d')
@@ -134,7 +145,9 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
 
   if (mode === 'flat') {
     return (
-      <div className="path-grid mt-10 w-full">
+      <div className="container-x flex flex-col items-center py-16 text-center">
+        {top}
+        <div className="path-grid mt-10 w-full">
         {paths.map((p) => (
           <button key={p.id} type="button" onClick={() => onChoose(p.id, { x: window.innerWidth / 2, y: window.innerHeight / 2 })}
             aria-pressed={selected === p.id} className="path-card group" style={themeVars(p.theme)} data-cursor={cursorLabel}>
@@ -144,6 +157,8 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
             <span className="path-go" aria-hidden="true"><Arrow /></span>
           </button>
         ))}
+        </div>
+        {bottom}
       </div>
     )
   }
@@ -181,7 +196,11 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose }: {
           </button>
         ))}
       </div>
-      <p className="path-world-hint" aria-hidden="true">{hint}</p>
+      <div className="path-world-top">{top}</div>
+      <div className="path-world-bottom">
+        <p className="path-world-hint" aria-hidden="true">{hint}</p>
+        {bottom}
+      </div>
     </div>
   )
 }

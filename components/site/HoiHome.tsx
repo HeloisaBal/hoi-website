@@ -179,11 +179,47 @@ export function HoiHome() {
 
       {/* ================= HERO ================= */}
       <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
-        className="hero relative isolate flex min-h-[100svh] items-center">
+        className={`hero relative isolate flex items-center ${step === 'persona' ? 'is-world' : 'min-h-[100svh]'}`}>
         <HeroBackdrop />
         <ParallaxShapes />
         <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
 
+        {/* ---------- STEP 1: which path? The whole screen is the map ---------- */}
+        {step === 'persona' && (
+          <PathWorld paths={mainPaths} selected={persona} hint={home.pathHint} cursorLabel={home.cursorSail}
+            onChoose={(id, from) => pick(id, from)}
+            top={
+              <div className="path-question rise" style={rise(0)}>
+                <h1 className="flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
+                  style={{ fontSize: 'clamp(2rem, 4.2vw, 3.4rem)' }}>
+                  Hoi! <WaveHand />
+                </h1>
+                <p id="path-question" className="mt-2 font-display text-lg font-semibold tracking-[-0.01em] text-ink sm:text-2xl">
+                  {home.pathPrompt}
+                </p>
+              </div>
+            }
+            bottom={
+              <div className="path-more">
+                {morePaths.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <span className="text-sm font-medium text-ink">{home.pathMore}</span>
+                    {morePaths.map((p) => (
+                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e.currentTarget)} aria-pressed={persona === p.id} className="chip">
+                        {p.pathLabel}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={skipPath}
+                  className="text-sm font-medium text-ink underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
+                  {home.pathSkip}
+                </button>
+              </div>
+            } />
+        )}
+
+        {step !== 'persona' && (
         <div className="container-x py-20 sm:py-28 lg:py-32">
           <div className={step === 'done' ? 'w-full' : 'mx-auto flex max-w-5xl flex-col items-center text-center'} aria-live="polite">
 
@@ -237,40 +273,6 @@ export function HoiHome() {
                 <p className="rise mt-8 font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl">
                   Setting sail, {draft.trim().split(/\s+/)[0]}…
                 </p>
-              </div>
-            )}
-
-            {/* ---------- STEP 1: which path? ---------- */}
-            {step === 'persona' && (
-              <div key="persona" className="flex w-full flex-col items-center">
-                <span className="hero-pill rise" style={rise(0)}>
-                  <span className="pill-dot" aria-hidden="true" />{home.heroPill}
-                </span>
-                {/* smaller than the name step: the world below is the star here */}
-                <h1 className="rise mt-6 flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
-                  style={{ ...rise(1), fontSize: 'clamp(2.6rem, 6vw, 4.75rem)' }}>
-                  Hoi! <WaveHand />
-                </h1>
-                <p id="path-question" className="rise mt-4 font-display text-xl font-semibold tracking-[-0.01em] text-ink sm:text-[1.6rem]" style={rise(2)}>
-                  {home.pathPrompt}
-                </p>
-                <PathWorld paths={mainPaths} selected={persona} hint={home.pathHint} cursorLabel={home.cursorSail}
-                  onChoose={(id, from) => pick(id, from)} />
-                {morePaths.length > 0 && (
-                  <div className="rise mt-8 flex flex-wrap items-center justify-center gap-2.5" style={rise(5)}>
-                    <span className="text-sm font-medium text-muted">{home.pathMore}</span>
-                    {morePaths.map((p) => (
-                      <button key={p.id} type="button" onClick={(e) => pick(p.id, e.currentTarget)} aria-pressed={persona === p.id} className="chip">
-                        {p.pathLabel}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button type="button" onClick={skipPath}
-                  className="rise mt-8 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
-                  style={rise(6)}>
-                  {home.pathSkip}
-                </button>
               </div>
             )}
 
@@ -338,6 +340,7 @@ export function HoiHome() {
             )}
           </div>
         </div>
+        )}
       </section>
 
       {/* ================= S1: the founder journey (programmes) ================= */}

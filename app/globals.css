@@ -1137,37 +1137,47 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 @media (prefers-reduced-motion: reduce) { .path-card { transition: none; } .path-card:hover { transform: none; } }
 
 /* ------------------------------------------------------------
-   Landing: the 3D path world (PathWorld.tsx). The pins are the
-   buttons; each carries its persona colours as CSS variables.
+   Landing: the 3D path world (PathWorld.tsx) fills the screen under
+   the header. The question floats at the top, the other options at
+   the bottom; the pins are the buttons, each in its persona colours.
    ------------------------------------------------------------ */
-.path-world { position: relative; width: min(100%, 72rem); height: clamp(420px, 60vh, 640px); margin-top: 1.25rem; border-radius: 2rem; overflow: hidden; }
-.path-world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .6s ease; }
+.hero.is-world { display: block; }
+.path-world { position: relative; width: 100%; height: calc(100svh - 64px); overflow: hidden; }
+@media (min-width: 640px) { .path-world { height: calc(100svh - 72px); } }
+.path-world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .8s ease; }
 .path-world.is-ready .path-world-canvas { opacity: 1; }
 .path-world-labels { position: absolute; inset: 0; pointer-events: none; }
+.path-world-top { position: absolute; left: 50%; top: clamp(.75rem, 3vh, 2rem); translate: -50% 0; z-index: 2; pointer-events: none; width: max-content; max-width: calc(100% - 2rem); }
+.path-question { display: flex; flex-direction: column; align-items: center; padding: .9rem 1.6rem 1rem; border-radius: 1.5rem; text-align: center; background: rgb(255 255 255 / .82); backdrop-filter: blur(8px); box-shadow: 0 18px 40px -24px rgb(23 10 43 / .45); pointer-events: auto; }
+.path-world-bottom { position: absolute; left: 50%; bottom: clamp(.75rem, 3vh, 1.75rem); translate: -50% 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: .6rem; width: max-content; max-width: calc(100% - 1.5rem); pointer-events: none; }
+.path-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem 1.25rem; padding: .6rem 1rem; border-radius: 1.25rem; background: rgb(255 255 255 / .82); backdrop-filter: blur(8px); box-shadow: 0 18px 40px -24px rgb(23 10 43 / .45); pointer-events: auto; }
+.path-more .chip { padding: .45rem 1rem; font-size: .9rem; }
+.path-world-hint { padding: .3rem .8rem; border-radius: 999px; font-size: .78rem; font-weight: 600; color: var(--color-ink); background: rgb(255 255 255 / .7); white-space: nowrap; }
 .path-pin {
-  position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; grid-template-columns: 1fr auto; column-gap: .65rem; align-items: center;
-  max-width: 15rem; padding: .7rem .7rem .7rem 1rem; border-radius: 1.1rem; text-align: left; color: #fff;
-  background: linear-gradient(150deg, var(--c1), var(--c2) 60%, var(--c3));
-  box-shadow: 0 14px 30px -14px var(--c3); transition: box-shadow .25s ease, scale .25s ease;
+  position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; grid-template-columns: auto 1fr auto; column-gap: .6rem; align-items: center;
+  max-width: 17rem; padding: .55rem .55rem .55rem .7rem; border-radius: 999px; text-align: left; color: var(--color-ink);
+  background: #fff; border: 3px solid var(--c1); box-shadow: 0 14px 30px -14px var(--c3); transition: box-shadow .25s ease, scale .25s ease;
 }
-.path-pin::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; background: var(--c3); border-radius: 2px; }
-.path-world:not(.is-ready) .path-pin { top: 50%; transform: translate(-50%, -50%); }
-.path-world:not(.is-ready) .path-pin[data-slot='0'] { left: 20%; }
-.path-world:not(.is-ready) .path-pin[data-slot='1'] { left: 50%; top: 30%; }
-.path-world:not(.is-ready) .path-pin[data-slot='2'] { left: 80%; }
-.path-pin.is-hot, .path-pin:hover { scale: 1.06; box-shadow: 0 20px 40px -14px var(--c3); }
+.path-pin::before { content: ''; grid-row: 1 / span 2; width: .8rem; height: .8rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
+.path-pin::after { content: ''; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; background: #fff; border-right: 3px solid var(--c1); border-bottom: 3px solid var(--c1); border-radius: 0 0 3px 0; }
+.path-world:not(.is-ready) .path-pin { top: 55%; transform: translate(-50%, -50%); }
+.path-world:not(.is-ready) .path-pin[data-slot='0'] { left: 22%; }
+.path-world:not(.is-ready) .path-pin[data-slot='1'] { left: 45%; top: 70%; }
+.path-world:not(.is-ready) .path-pin[data-slot='2'] { left: 76%; top: 45%; }
+.path-pin.is-hot, .path-pin:hover { scale: 1.07; box-shadow: 0 20px 40px -14px var(--c3); }
 .path-pin:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 4px; }
-.path-pin[aria-pressed='true'] { outline: 3px solid var(--color-ink); outline-offset: 3px; }
-.path-pin-label { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 1.05rem; line-height: 1; letter-spacing: -.01em; }
-.path-pin-text { grid-column: 1; margin-top: .3rem; font-size: .78rem; line-height: 1.3; color: rgb(255 255 255 / .88); }
-.path-pin-go { grid-column: 2; grid-row: 1 / span 2; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--accent); }
-.path-world-hint { position: absolute; left: 50%; bottom: .9rem; translate: -50% 0; padding: .35rem .8rem; border-radius: 999px; font-size: .78rem; font-weight: 600; color: var(--color-muted); background: rgb(255 255 255 / .75); white-space: nowrap; pointer-events: none; }
+.path-pin[aria-pressed='true'] { background: var(--accent); color: #fff; }
+.path-pin-label { grid-column: 2; font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 1rem; line-height: 1; letter-spacing: -.01em; }
+.path-pin-text { grid-column: 2; margin-top: .2rem; font-size: .76rem; line-height: 1.25; color: var(--color-muted); }
+.path-pin-go { grid-column: 3; grid-row: 1 / span 2; display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: #fff; }
 @media (max-width: 767px) {
-  .path-world { height: min(78svh, 640px); border-radius: 1.5rem; }
-  .path-pin { max-width: 11rem; padding: .55rem .55rem .55rem .8rem; }
-  .path-pin-label { font-size: .92rem; }
+  .path-question { padding: .6rem 1.1rem .7rem; }
+  .path-pin { max-width: 12rem; padding: .4rem .4rem .4rem .6rem; }
+  .path-pin-label { font-size: .88rem; }
   .path-pin-text { display: none; }
-  .path-pin-go { width: 1.8rem; height: 1.8rem; }
+  .path-pin-go { width: 1.75rem; height: 1.75rem; }
+  .path-world-hint { display: none; }
+  .path-more { gap: .4rem .9rem; padding: .5rem .75rem; }
 }
 
 /* ------------------------------------------------------------
