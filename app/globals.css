@@ -723,7 +723,7 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
 /* the next section slides up over the coloured stack, with a wavy top edge,
    so the full-colour screen only shows briefly */
 @media (prefers-reduced-motion: no-preference) {
-  .event-stack + .journey, .event-stack + .harbour, .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -60vh; background: var(--tint); transition: background-color .6s ease; }
+  .event-stack + .journey, .event-stack + .harbour { position: relative; z-index: 25; margin-top: -60vh; background: var(--tint); transition: background-color .6s ease; }
   .event-stack + .journey::before, .event-stack + .harbour::before, .wave-bridge + .after-waves::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: clamp(70px, 12vh, 140px);
     background: var(--tint); pointer-events: none;
@@ -1265,15 +1265,14 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
    --warm (0..1, set while scrolling) mixes the path colour into the
    background. The waves reuse .event-stack-band / .band-1..4.
    ------------------------------------------------------------ */
-.wave-bridge { position: relative; height: 230vh; }
+.wave-bridge { position: relative; height: 300vh; }
 .wave-bridge-pin {
   --warm: 0;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: color-mix(in srgb, var(--c1) calc(var(--warm) * 38%), var(--tint));
 }
-.wave-bridge-text {
-  position: absolute; top: 48%; left: 0; transform: translate(10%, -50%); white-space: nowrap; pointer-events: none; will-change: transform;
-  font-family: var(--font-display); font-weight: 900; text-transform: uppercase; letter-spacing: -.03em; line-height: 1;
-  font-size: clamp(5rem, 18vw, 15rem); color: color-mix(in srgb, var(--accent) 30%, transparent);
+.wave-bridge-band { height: 150%; }
+@media (prefers-reduced-motion: no-preference) {
+  .wave-bridge + .after-waves { position: relative; z-index: 25; margin-top: -20vh; background: var(--tint); }
 }
 @media (prefers-reduced-motion: reduce) { .wave-bridge { display: none; } }
