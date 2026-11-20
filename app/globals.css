@@ -1276,6 +1276,11 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
   background: transparent;
 }
 .wave-bridge-band { height: 130%; transform: translate3d(0, 110vh, 0); }
+@media (max-width: 759px) {
+  /* phones: shorter rise (0.62 screens) and slightly shorter bands, like Maré */
+  .wave-bridge { height: 175vh; }
+  .wave-bridge-band { height: 120%; }
+}
 .wave-bridge-band-1 { color: var(--c1); }
 .wave-bridge-band-2 { color: var(--c2); }
 .wave-bridge-band-3 { color: var(--c3); }
