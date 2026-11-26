@@ -32,7 +32,7 @@ export function HoiHome() {
   const [draft, setDraft] = useState('')
   /* "Remember me": name and persona are only saved in the browser when ticked */
   const [remember, setRemember] = useState(false)
-  const [step, setStep] = useState<Step>('persona')
+  const [step, setStep] = useState<Step>('name')
   const [returning, setReturning] = useState(false)
   const [motion, setMotion] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
@@ -84,7 +84,7 @@ export function HoiHome() {
     return { x: c.x, y: Math.min(c.y, window.innerHeight * 0.45) }
   }
 
-  /* step 1 → 2: the name */
+  /* step 1 → 2: the name first, then the 3D map to choose a path */
   function submitName(e: React.FormEvent) {
     e.preventDefault()
     const clean = draft.trim().slice(0, 40)
@@ -94,7 +94,8 @@ export function HoiHome() {
       save(KEY_REMEMBER, remember ? '1' : null)
       save(KEY_NAME, remember ? clean || null : null)
       save(KEY_PERSONA, remember ? persona : null)
-      setStep('done')
+      // first visit: on to the map; someone who already has a path goes straight to their hero
+      setStep(persona ? 'done' : 'persona')
       if (clean) {
         const { x, y } = heroCentre()
         burst(x, y, [theme.c1, theme.c2, theme.c3, theme.accent], 56)
@@ -105,7 +106,7 @@ export function HoiHome() {
     window.setTimeout(finish, 1100)
   }
 
-  /* step 2 → 3: who they are. The page turns their colour. */
+  /* step 2 → 3: who they are (on the map). The page turns their colour. */
   function pick(id: PersonaId, from: Element | { x: number; y: number }) {
     const p = personas.find((x) => x.id === id)!
     const { x, y } = from instanceof Element ? centreOf(from) : from
@@ -113,9 +114,8 @@ export function HoiHome() {
       setPersona(id)
       setReturning(false)
       if (load(KEY_REMEMBER) === '1') save(KEY_PERSONA, id)
-      // first visit: ask for the name next; someone switching paths goes straight to their hero
-      if (name) setStep('done')
-      else { setStep('name'); window.setTimeout(() => inputRef.current?.focus(), 80) }
+      // the name was asked before the map (or skipped), so straight to their hero
+      setStep('done')
     }
     if (prefersReducedMotion()) { apply(); return }
     colourWipe(x, y, p.theme.c1, p.theme.c3, p.word)
@@ -127,8 +127,9 @@ export function HoiHome() {
   }
 
   function forget() {
-    setPersona(null); setName(''); setDraft(''); setReturning(false); setStep('persona')
+    setPersona(null); setName(''); setDraft(''); setReturning(false); setStep('name')
     save(KEY_PERSONA, null); save(KEY_NAME, null); save(KEY_REMEMBER, null); setRemember(false)
+    window.setTimeout(() => inputRef.current?.focus(), 80)
   }
 
   /* soft spotlight that follows the pointer across the hero */
@@ -176,7 +177,7 @@ export function HoiHome() {
         <ParallaxShapes />
         <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
 
-        {/* ---------- STEP 1: which path? The whole screen is the map ---------- */}
+        {/* ---------- STEP 2: which path? The whole screen is the map ---------- */}
         {step === 'persona' && (
           <PathWorld paths={mainPaths} selected={persona} hint={home.pathHint} cursorLabel={home.cursorSail}
             onChoose={(id, from) => pick(id, from)}
@@ -198,7 +199,7 @@ export function HoiHome() {
         <div className="container-x py-20 sm:py-28 lg:py-32">
           <div className={step === 'done' ? 'w-full' : 'mx-auto flex max-w-5xl flex-col items-center text-center'} aria-live="polite">
 
-            {/* ---------- STEP 2: the name (optional) ---------- */}
+            {/* ---------- STEP 1: the name (optional), before the map ---------- */}
             {step === 'name' && (
               <form key="name" onSubmit={submitName} className="flex w-full flex-col items-center">
                 <span className="hero-pill rise" style={rise(0)}>
