@@ -49,9 +49,14 @@ export function WaveBridge() {
       const e = easeOut(clamp((wp - k * 0.14) / 0.58, 0, 1))
       const h = band.offsetHeight
       let top = (h * (110 + (BAND_STOP[k] - 110) * e)) / 100 + pinTop
-      // the first band's wave line never dips below the end of the hero (its lowest
-      // point is 18% into the band), so nothing blank shows between them
-      if (k === 0) top = Math.min(top, Math.max(heroBottom - h * 0.18, (h * BAND_STOP[0]) / 100))
+      // the first band follows the end of the hero. While the hero still fills the
+      // screen the band waits just below it, so the map is never covered; once the
+      // hero starts to scroll away the band tucks up under it until its wave line
+      // (lowest point 18% into the band) no longer dips below the hero's end
+      if (k === 0) {
+        const tuck = clamp((vh - heroBottom) / (h * 0.18), 0, 1)
+        top = Math.min(top, Math.max(heroBottom - h * 0.18 * tuck, (h * BAND_STOP[0]) / 100))
+      }
       band.style.transform = `translate3d(0, ${(top - pinTop).toFixed(1)}px, 0)`
     })
   })

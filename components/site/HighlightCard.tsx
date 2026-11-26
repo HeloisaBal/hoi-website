@@ -8,20 +8,22 @@ import { TITLE_SHOWN_EVENT } from './LogoWindow'
 /* ------------------------------------------------------------
    Floating announcement card (a partnership, a new programme, news).
    Two modes:
-   - popIn: pops up shortly after a section is on screen (on the homepage:
-     the "Welcome to the harbour of ideas" title), and goes away when the
-     visitor scrolls past it.
+   - popIn: pops up as soon as a section is on screen (on the homepage:
+     the "Welcome to the harbour of ideas" title) and then stays with the
+     visitor while they scroll, until they close it.
    - otherwise: slides in at the bottom-left once the visitor has
      scrolled past the first screen. Both step aside near
    sections marked data-no-highlight while they are on screen (the 3D
    map, contact, footer). Content comes from Sanity
    ("Highlight"), or the demo in data.ts until Sanity is connected.
-   Visitors can close it; it comes back when hoi publishes a new one.
+   Visitors can close it; it stays closed for the rest of the visit
+   (sessionStorage, nothing kept after the tab closes) and always comes
+   back when hoi publishes a new one.
    ------------------------------------------------------------ */
 
 const KEY_HIDDEN = 'hoi.highlight.hidden'
 
-const POP_DELAY_MS = 1200
+const POP_DELAY_MS = 400
 
 export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
   highlight: Highlight | null
@@ -39,12 +41,14 @@ export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
     if (!highlight) return
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reads browser storage once
-      if (localStorage.getItem(KEY_HIDDEN) === highlight.id) setClosed(true)
+      if (sessionStorage.getItem(KEY_HIDDEN) === highlight.id) setClosed(true)
     } catch { /* storage blocked: just show it */ }
   }, [highlight])
 
   /* pop-up mode */
   const [ready, setReady] = useState(false)
+  // once it has popped up it stays (until closed)
+  const [popped, setPopped] = useState(false)
   useEffect(() => {
     if (!popIn) return
     const t = window.setTimeout(() => setReady(true), POP_DELAY_MS)
@@ -53,17 +57,17 @@ export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
 
   useEffect(() => {
     const check = () => {
+      // step aside for sections with their own button in that corner (contact, footer)
+      const blocked = Array.from(document.querySelectorAll('[data-no-highlight]'))
+        .some((b) => { const r = b.getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0 })
       if (popIn) {
-        const el = document.querySelector(popIn)
-        const r = el?.getBoundingClientRect()
-        setShown(!!r && ready && r.bottom > window.innerHeight * 0.45 && r.top < window.innerHeight * 0.5)
+        const due = popped || (ready && !!document.querySelector(popIn))
+        if (due && !popped) setPopped(true)
+        setShown(due && !blocked)
         return
       }
       const el = afterSection ? document.querySelector(afterSection) : null
       const past = el ? el.getBoundingClientRect().top < window.innerHeight / 2 : window.scrollY > window.innerHeight * after
-      // step aside for sections with their own button in that corner (contact, footer)
-      const blocked = Array.from(document.querySelectorAll('[data-no-highlight]'))
-        .some((b) => { const r = b.getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0 })
       setShown(past && !blocked)
     }
     check()
@@ -75,7 +79,7 @@ export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
       window.removeEventListener('resize', check)
       window.removeEventListener(TITLE_SHOWN_EVENT, check)
     }
-  }, [after, afterSection, popIn, ready])
+  }, [after, afterSection, popIn, ready, popped])
 
   if (!highlight || closed) return null
   const { id, title, label, text, link, linkText, logoUrl, logoAlt } = highlight
@@ -83,7 +87,7 @@ export function HighlightCard({ highlight, after = 1, afterSection, popIn }: {
 
   const close = () => {
     setClosed(true)
-    try { localStorage.setItem(KEY_HIDDEN, id) } catch { /* fine */ }
+    try { sessionStorage.setItem(KEY_HIDDEN, id) } catch { /* fine */ }
   }
 
   return (
