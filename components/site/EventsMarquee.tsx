@@ -2,12 +2,12 @@
 
 import { useContent } from './ContentContext'
 import type { HoiEvent } from './data'
-import { Arrow, fit, stegaClean } from './shared'
+import { Arrow, fit } from './shared'
 
 /* ------------------------------------------------------------
    hoi's events as an endless banner (inspired by Web Bae's
-   "Greatest Infinite Marquee"): a ribbon of moving text and, under
-   it, a row of event cards that keeps scrolling to the left. Hover
+   "Greatest Infinite Marquee"): a row of event cards that keeps
+   scrolling to the left. Hover
    or tab into it and it pauses. Pure CSS animation; the list is
    shown twice so the loop has no seam (the copy is hidden from
    screen readers and keyboards).
@@ -49,7 +49,6 @@ export function EventsMarquee() {
   if (!shown.length) return null
   // short lists are repeated so the row is always wider than the screen
   const base = Array.from({ length: Math.max(1, Math.ceil(6 / shown.length)) }, () => shown).flat()
-  const ribbon = stegaClean(home.eventsMarquee)
   // slower for longer rows, so cards always move at the same speed
   const duration = `${Math.max(30, base.length * 7)}s`
 
@@ -82,14 +81,6 @@ export function EventsMarquee() {
                 {highlight.linkText ?? 'Find out more'} <Arrow />
               </a>
             )}
-          </div>
-        </div>
-      )}
-
-      {ribbon && (
-        <div className="em-ribbon" aria-hidden="true">
-          <div className="em-ribbon-track">
-            <span>{ribbon}</span><span>{ribbon}</span>
           </div>
         </div>
       )}

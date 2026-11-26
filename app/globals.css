@@ -1234,9 +1234,6 @@ html, body { overflow-x: clip; } /* full-bleed sections never cause sideways scr
    plus a ribbon of text going the other way. Pauses on hover and
    keyboard focus; still for reduced motion.
    ------------------------------------------------------------ */
-.em-ribbon { margin-top: 2.2rem; overflow: hidden; background: var(--color-ink); color: #fff; rotate: -1.5deg; scale: 1.03; }
-.em-ribbon-track { display: flex; width: max-content; animation: em-left 40s linear infinite reverse; }
-.em-ribbon-track span { padding: .8rem 1.5rem; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.1rem, 2.4vw, 1.6rem); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .em-viewport { margin-top: 2rem; overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
 .em-track { display: flex; gap: 1rem; width: max-content; padding: .5rem 0 1.5rem; animation: em-left var(--em-duration, 40s) linear infinite; }
 .em-viewport:hover .em-track, .em-viewport:focus-within .em-track { animation-play-state: paused; }
@@ -1254,7 +1251,7 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
 .em-go { position: absolute; top: 1rem; right: 1rem; display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--color-ink); }
 @keyframes em-left { to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) {
-  .em-track, .em-ribbon-track { animation: none; }
+  .em-track { animation: none; }
   .em-viewport { overflow-x: auto; -webkit-mask: none; mask: none; }
   .em-track { padding-left: var(--gut, 1.25rem); }
   .em-track > [aria-hidden='true'] { display: none; }
