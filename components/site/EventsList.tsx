@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useContent } from './ContentContext'
-import type { HoiEvent } from './data'
+import type { HoiEvent, PersonaId } from './data'
 import { Arrow } from './shared'
 import { askHoi } from './chat/ask'
 
@@ -39,9 +39,10 @@ export function EventRow({ ev, ask }: { ev: HoiEvent; ask?: string }) {
   )
 }
 
-export function EventsList() {
+/** Homepage: the events marked "Show on the homepage". Persona pages: every event for that persona. */
+export function EventsList({ persona }: { persona?: PersonaId }) {
   const { events, home, settings } = useContent()
-  const shown = events.filter((e) => e.onHomepage !== false)
+  const shown = persona ? events.filter((e) => e.for.includes(persona)) : events.filter((e) => e.onHomepage !== false)
   if (!shown.length) return null
   return (
     <section id="events" className="wrap scroll-mt-24 pt-28 sm:pt-40" aria-labelledby="events-title">

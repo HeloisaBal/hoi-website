@@ -4,6 +4,7 @@ import './globals.css'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
 import { SanityLive } from '@/sanity/lib/live'
+import { VisitorProvider } from '@/components/site/VisitorContext'
 
 /* Clean direction: a condensed display face for headlines, a serif for
    reading and a mono for labels (same pairing as GroundUp's Largo). */
@@ -44,7 +45,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${bigShoulders.variable} ${newsreader.variable} ${dmMono.variable}`}>
       <body>
-        {children}
+        {/* the visitor's name and path, shared by every page (clean direction) */}
+        <VisitorProvider>{children}</VisitorProvider>
         {/* Studio preview only: drafts appear as the editor types, with click-to-edit outlines */}
         {preview && SanityLive && <SanityLive />}
         {preview && <VisualEditing />}

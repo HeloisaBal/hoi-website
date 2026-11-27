@@ -14,14 +14,19 @@ import { Arrow } from './shared'
    Content: Sanity → Offers, texts under Homepage → Offers.
    ------------------------------------------------------------ */
 
-export function OffersSection({ persona, open: openProp, onOpen }: {
+export function OffersSection({ persona, only, plural, open: openProp, onOpen }: {
   persona: PersonaId | null
+  /** persona pages: only this persona's programmes, the first one open */
+  only?: boolean
+  /** "founders": the title becomes "What hoi offers founders" */
+  plural?: string
   /** which programme is open, when the page controls it (the chosen path opens its first one) */
   open?: string | null
   onOpen?: (id: string | null) => void
 }) {
-  const { offers, home } = useContent()
-  const [openLocal, setOpenLocal] = useState<string | null>(null)
+  const { offers: all, home } = useContent()
+  const offers = only && persona ? all.filter((o) => o.for.includes(persona)) : all
+  const [openLocal, setOpenLocal] = useState<string | null>(only ? offers[0]?.id ?? null : null)
   const open = openProp !== undefined ? openProp : openLocal
   const setOpen = onOpen ?? setOpenLocal
   if (!offers.length) return null
@@ -33,7 +38,7 @@ export function OffersSection({ persona, open: openProp, onOpen }: {
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] lg:gap-24">
         <div>
           <p className="mono text-accent">{home.offersEyebrow}</p>
-          <h2 id="offers-title" className="disp mt-4 text-[clamp(3.4rem,7.5vw,7.5rem)]">{home.offersTitle}</h2>
+          <h2 id="offers-title" className="disp mt-4 text-[clamp(3.4rem,7.5vw,7.5rem)]">{plural ? `${home.offersTitle} ${plural}` : home.offersTitle}</h2>
           <p className="c-lede mt-7 max-w-md">{home.offersIntro}</p>
         </div>
 
@@ -50,7 +55,7 @@ export function OffersSection({ persona, open: openProp, onOpen }: {
                     <span>
                       <span className="disp c-row-name">
                         {o.name}
-                        {mine(o.for) && <span className="mono c-tag">{home.forYouLabel}</span>}
+                        {mine(o.for) && !only && <span className="mono c-tag">{home.forYouLabel}</span>}
                       </span>
                       <span className="mt-2 block font-sans text-lg italic normal-case text-muted">{o.tagline}</span>
                     </span>
