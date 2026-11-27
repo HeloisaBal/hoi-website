@@ -83,7 +83,7 @@ export function PersonaPage({ id }: { id: PersonaId }) {
                   <p className="disp text-[clamp(2.4rem,4.4vw,3.6rem)]">
                     <span key={visitor.name} className="name-sweep">Hoi {visitor.firstName}!</span>
                   </p>
-                  <button type="button" onClick={() => askName()} className="mono mt-3 text-muted underline underline-offset-4 hover:text-ink">
+                  <button type="button" onClick={() => askName()} className="mono mt-6 text-muted underline underline-offset-4 hover:text-ink">
                     Not {visitor.firstName}?
                   </button>
                 </>
