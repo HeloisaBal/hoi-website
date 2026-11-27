@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
    Both skip themselves when the visitor prefers reduced motion.
    ------------------------------------------------------------ */
 
-type Particle = { dx: number; dy: number; size: number; rot: number; color: string; shape: 'dot' | 'square' | 'ring' | 'bar'; delay: number }
+type Particle = { dx: number; dy: number; size: number; rot: number; color: string; shape: 'dot' | 'square' | 'ring' | 'bar' | 'bubble'; delay: number }
 type BurstT = { id: number; x: number; y: number; particles: Particle[] }
 type WipeT = { id: number; x: number; y: number; from: string; to: string; word: string }
 
@@ -31,17 +31,19 @@ export function useEffects() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
-  const burst = useCallback((x: number, y: number, colors: string[], count = 42) => {
+  /** `bubbles`: thin, empty, outlined bubbles with a little shine (clean direction) instead of coloured shapes */
+  const burst = useCallback((x: number, y: number, colors: string[], count = 42, bubbles = false) => {
     if (prefersReducedMotion()) return
-    const shapes: Particle['shape'][] = ['dot', 'square', 'ring', 'bar']
+    const shapes: Particle['shape'][] = bubbles ? ['bubble'] : ['dot', 'square', 'ring', 'bar']
     const particles: Particle[] = Array.from({ length: count }, () => {
       const angle = Math.random() * Math.PI * 2
       const dist = 110 + Math.random() * 260
       return {
         dx: Math.cos(angle) * dist,
         dy: Math.sin(angle) * dist - 40,
-        size: 6 + Math.random() * 12,
-        rot: (Math.random() - 0.5) * 720,
+        // bubbles: a mix of a few big ones and many small ones, and they don't spin (the shine stays top-left)
+        size: bubbles ? 10 + Math.random() ** 2 * 46 : 6 + Math.random() * 12,
+        rot: bubbles ? 0 : (Math.random() - 0.5) * 720,
         color: colors[Math.floor(Math.random() * colors.length)],
         shape: shapes[Math.floor(Math.random() * shapes.length)],
         delay: Math.random() * 0.08,
@@ -75,7 +77,13 @@ export function useEffects() {
       )}
       {bursts.map((b) => (
         <div key={b.id} className="burst" style={{ left: b.x, top: b.y }} aria-hidden="true">
-          {b.particles.map((p, i) => (
+          {b.particles.map((p, i) => p.shape === 'bubble' ? (
+            <span key={i} className="particle particle-bubble"
+              style={{
+                ['--dx' as string]: `${p.dx}px`, ['--dy' as string]: `${p.dy}px`, ['--rot' as string]: '0deg',
+                animationDelay: `${p.delay}s`, width: p.size, height: p.size, ['--s' as string]: `${p.size}px`,
+              }} />
+          ) : (
             <span key={i} className="particle"
               style={{
                 ['--dx' as string]: `${p.dx}px`, ['--dy' as string]: `${p.dy}px`, ['--rot' as string]: `${p.rot}deg`,

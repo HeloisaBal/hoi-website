@@ -16,7 +16,7 @@ import { prefersReducedMotion, useEffects } from './effects'
    Also runs the move to a persona page, because it has to outlast
    the page change: the persona's colour grows over the screen with
    its word ("Build."), the persona page loads underneath, then the
-   colour opens up from the middle with a burst of shapes.
+   colour opens up from the middle with a burst of thin, empty bubbles.
    ------------------------------------------------------------ */
 
 type Cover = { key: number; x: number; y: number; colour: string; word: string; burst: string[]; phase: 'cover' | 'reveal' }
@@ -106,7 +106,7 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
     const c = coverRef.current
     if (!c || c.phase !== 'cover') return
     setCover({ ...c, phase: 'reveal' })
-    burst(window.innerWidth / 2, window.innerHeight * 0.42, c.burst, 64)
+    burst(window.innerWidth / 2, window.innerHeight * 0.42, c.burst, 46, true)
     timers.current.push(window.setTimeout(() => setCover((cur) => (cur?.key === c.key ? null : cur)), REVEAL_MS))
   }, [burst])
 

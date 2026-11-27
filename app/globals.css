@@ -1494,3 +1494,8 @@ a.ticker-band:hover .ticker-item { color: #2ceccd; }
 @keyframes wave { 0%, 40%, 100% { transform: rotate(0); } 8%, 24% { transform: rotate(-22deg); } 16%, 32% { transform: rotate(12deg); } }
 @media (max-width: 640px) { .chat-invite-bubble { max-width: 11rem; font-size: .9rem; } .chat-invite-figure { width: 2.8rem; } }
 @media (prefers-reduced-motion: reduce) { .chat-invite, .chat-invite-arm { animation: none; } }
+
+/* burst, clean direction: empty bubbles with a thin ink outline and a small shine (arc + dot) */
+.particle-bubble { border: max(1.2px, calc(var(--s) * .035)) solid var(--color-ink); border-radius: 50%; background: transparent; }
+.particle-bubble::before { content: ''; position: absolute; left: 16%; top: 16%; width: 56%; height: 56%; border-radius: 50%; border: 0 solid var(--color-ink); border-top-width: max(1.5px, calc(var(--s) * .08)); border-left-width: max(1.5px, calc(var(--s) * .08)); border-right-color: transparent; border-bottom-color: transparent; transform: rotate(12deg); }
+.particle-bubble::after { content: ''; position: absolute; left: 70%; top: 19%; width: max(2px, calc(var(--s) * .09)); height: max(2px, calc(var(--s) * .09)); border-radius: 50%; background: var(--color-ink); }
