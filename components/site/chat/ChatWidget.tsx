@@ -7,6 +7,7 @@ import { KEY_PERSONA, load } from '../shared'
 import { CHAT_LIMITS } from '@/lib/chat/limits'
 import { ASK_EVENT } from './ask'
 import { ContactForm } from './ContactForm'
+import { ChatInvite, inviteDone } from './ChatInvite'
 import { MessageText } from './MessageText'
 import { useChat } from './useChat'
 
@@ -25,7 +26,7 @@ import { useChat } from './useChat'
 
 /** The page's current persona accent colour (it lives on the `.themed` root). */
 function pageAccent() {
-  const root = document.querySelector('.themed')
+  const root = document.querySelector('.themed, .clean')
   return root ? getComputedStyle(root).getPropertyValue('--accent').trim() : ''
 }
 
@@ -48,6 +49,7 @@ export function ChatWidget({ contactForm = false }: {
     setAccent(pageAccent())
     setPersona(load(KEY_PERSONA) as PersonaId | null)
     setOpen(true)
+    inviteDone()
   }
   function hide() {
     setOpen(false)
@@ -174,6 +176,7 @@ export function ChatWidget({ contactForm = false }: {
         </section>
       )}
 
+      <ChatInvite text={t.inviteText} chatOpen={open} onOpen={show} />
       <button ref={launcher} type="button" className="chat-launcher" aria-expanded={open} aria-controls={open ? `${id}-panel` : undefined}
         onClick={() => (open ? hide() : show())}>
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -35,6 +35,12 @@ type Visitor = {
   go: (p: Persona, from?: { x: number; y: number }) => void
   /** a persona page calls this once it is on screen: the colour opens up and the burst plays */
   arrived: () => void
+  /** the name question (NameDialog) is open */
+  nameAsk: boolean
+  /** open the name question; `auto`: only if we don't know the name and they haven't skipped it this visit */
+  askName: (auto?: boolean) => void
+  /** close it; `skipped`: they chose "Not now", so it doesn't come back by itself this visit */
+  closeName: (skipped: boolean) => void
 }
 
 const VisitorContext = createContext<Visitor | null>(null)
@@ -51,6 +57,10 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
   const [persona, setPersonaState] = useState<PersonaId | null>(null)
   const [remember, setRememberState] = useState(false)
   const [cover, setCover] = useState<Cover | null>(null)
+  const [nameAsk, setNameAsk] = useState(false)
+  const skipped = useRef(false)
+  const nameRef = useRef('')
+  useEffect(() => { nameRef.current = name }, [name])
   const coverRef = useRef<Cover | null>(null)
   const timers = useRef<number[]>([])
 
@@ -88,7 +98,7 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const forget = useCallback(() => {
-    setNameState(''); setPersonaState(null); setRememberState(false)
+    setNameState(''); setPersonaState(null); setRememberState(false); skipped.current = false
     save(KEY_NAME, null); save(KEY_PERSONA, null); save(KEY_REMEMBER, null)
   }, [])
 
@@ -126,12 +136,21 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
     timers.current.push(window.setTimeout(reveal, 80))
   }, [reveal])
 
+  const askName = useCallback((auto = false) => {
+    if (auto && (nameRef.current || skipped.current)) return
+    setNameAsk(true)
+  }, [])
+  const closeName = useCallback((wasSkipped: boolean) => {
+    if (wasSkipped) skipped.current = true
+    setNameAsk(false)
+  }, [])
+
   const rawFirst = name.trim().split(/\s+/)[0] ?? ''
   const firstName = rawFirst.charAt(0).toLocaleUpperCase() + rawFirst.slice(1)
 
   const value = useMemo<Visitor>(() => ({
-    name, firstName, persona, remember, setRemember, setName, setPersona, forget, go, arrived,
-  }), [name, firstName, persona, remember, setRemember, setName, setPersona, forget, go, arrived])
+    name, firstName, persona, remember, setRemember, setName, setPersona, forget, go, arrived, nameAsk, askName, closeName,
+  }), [name, firstName, persona, remember, setRemember, setName, setPersona, forget, go, arrived, nameAsk, askName, closeName])
 
   return (
     <VisitorContext.Provider value={value}>

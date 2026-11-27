@@ -27,8 +27,8 @@ export function EventRow({ ev, ask }: { ev: HoiEvent; ask?: string }) {
   return (
     <li className="c-row">
       {ev.link
-        ? <a href={ev.link} className="c-event" {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{cells}</a>
-        : <div className="c-event">{cells}</div>}
+        ? <a href={ev.link} className="c-event c-hover" {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{cells}</a>
+        : <div className="c-event c-hover">{cells}</div>}
       {ask && (
         <button type="button" onClick={() => askHoi(`Tell me more about ${ev.title}`)}
           className="mono slide-link mb-5 ml-1 inline-flex gap-2 text-muted">

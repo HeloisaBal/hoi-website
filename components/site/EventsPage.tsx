@@ -28,8 +28,7 @@ export function EventsPage() {
         <section className="wrap pb-12 pt-14 sm:pb-20 sm:pt-24" aria-labelledby="events-title">
           <p className="mono text-accent">{t.pill}</p>
           <h1 id="events-title" className="disp c-hero-title mt-6">
-            <span className="block">{t.titleLine1}</span>
-            <span className="block text-accent">{t.titleLine2}</span>
+            {t.titleLine1} <span className="text-accent">{t.titleLine2}</span>
           </h1>
           <div className="mt-10 grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-end">
             <p className="c-lede max-w-xl">{t.intro}</p>

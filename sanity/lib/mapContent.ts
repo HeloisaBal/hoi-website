@@ -36,7 +36,7 @@ export const QUERY = `{
     | order(priority desc, startAt desc)[0]{ "id": _id, title, label, text, link, linkText, "logoUrl": logo.asset->url, "logoAlt": logo.alt },
   "impressum": *[_id == "impressum"][0]{ organisation, address, representedBy, email, phone, register, vatId, responsible, sections[]{ heading, text } },
   "privacy": *[_id == "privacyPolicy"][0]{ updated, intro, sections[]{ heading, text } },
-  "chatbot": *[_id == "chatbot"][0]{ enabled, buttonLabel, title, greeting, suggestions, placeholder, disclaimer, privacyLink, contactIntro, contactPrivacy, contactThanks, contactButton, nameLabel, emailLabel, messageLabel, sendLabel, checkText, errorText, busyText, faq[]{ question, answer } }
+  "chatbot": *[_id == "chatbot"][0]{ enabled, buttonLabel, inviteText, title, greeting, suggestions, placeholder, disclaimer, privacyLink, contactIntro, contactPrivacy, contactThanks, contactButton, nameLabel, emailLabel, messageLabel, sendLabel, checkText, errorText, busyText, faq[]{ question, answer } }
 }`
 
 type Raw = Record<string, unknown>
@@ -102,7 +102,7 @@ export function mapContent(raw: Raw): SiteContent {
     },
     home: {
       ...texts(home, d.home, {
-        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, pathHint: 50, cursorSail: 16, cursorGo: 16, generalHeadline: 60, generalLine: 160, generalCta: 28, ticketLabel: 40, ticketPassenger: 16, ticketRoute: 16, ticketGuest: 16, ticketOpenRoute: 20, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
+        introTitle: 40, introSub: 60, heroPill: 45, namePrompt: 40, nameSkip: 20, rememberLabel: 70, pathPrompt: 50, pathMore: 50, pathSkip: 30, pathHint: 50, cursorSail: 16, cursorGo: 16, generalHeadline: 60, generalLine: 160, generalCta: 28, ticketLabel: 40, ticketPassenger: 16, ticketRoute: 16, ticketGuest: 16, ticketOpenRoute: 20, eventsEyebrow: 25, eventsTitle: 40, eventsMarquee: 90,
         offersEyebrow: 25, offersTitle: 40, offersIntro: 160, forYouLabel: 16, askLabel: 24, whoEyebrow: 25, whoTitle: 50, whoText: 320, journeyEyebrow: 25, journeyTitle: 40, mapEyebrow: 25, mapTitle: 40, mapText: 140, sbEyebrow: 25, sbTitle: 40,
         aboutEyebrow: 25, quote: 160, quoteBy: 70, aboutLinkText: 30, partnersTitle: 70, contactTitle: 40, contactText: 140, contactButton: 24,
       }),
@@ -183,7 +183,7 @@ export function mapContent(raw: Raw): SiteContent {
 
     chatbot: {
       ...texts(bot, d.chatbot, {
-        buttonLabel: 20, title: 30, greeting: 220, placeholder: 40, disclaimer: 120, privacyLink: 30,
+        buttonLabel: 20, inviteText: 60, title: 30, greeting: 220, placeholder: 40, disclaimer: 120, privacyLink: 30,
         contactIntro: 160, contactPrivacy: 200, contactThanks: 160, contactButton: 24,
         nameLabel: 20, emailLabel: 20, messageLabel: 20, sendLabel: 16, checkText: 30, errorText: 140, busyText: 140,
       }),

@@ -47,6 +47,7 @@ export const chatbot = defineType({
       validation: (r) => r.max(FAQ_LIMITS.count),
     }),
     text('buttonLabel', 'Button label', 20, { group: 'texts', description: 'The round button in the corner, e.g. "Ask hoi".' }),
+    text('inviteText', 'Invitation bubble', 60, { group: 'texts', description: 'Clean design: what the little waving figure next to the chat button says, e.g. "Hoi! Questions? Chat with me."' }),
     text('title', 'Title of the chat window', 30, { group: 'texts' }),
     text('greeting', 'First message', 220, { group: 'texts', rows: 3, description: 'What the bot says when a visitor opens the chat.' }),
     words('suggestions', 'Suggested questions', 4, 60, {

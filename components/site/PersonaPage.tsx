@@ -12,7 +12,7 @@ import { PointerEffects } from './PointerEffects'
 import { AnnouncementBar } from './AnnouncementBar'
 import { OffersSection } from './OffersSection'
 import { EventsList } from './EventsList'
-import { NameForm } from './NameForm'
+import { NameDialog } from './NameDialog'
 import { ContactSection } from './ContactSection'
 
 /* ------------------------------------------------------------
@@ -21,7 +21,8 @@ import { ContactSection } from './ContactSection'
    The page takes the persona's colour as its one accent (Theme in
    data.ts) and greets the visitor by name:
    1. Hero: "Hoi Anna · Route · Founder", the persona's headline
-      and line, and the name question if we don't know them yet.
+      and line. Right after landing, the name question opens
+      (NameDialog) if we don't know them yet.
    2. Where they are on the way from idea to company.
    3. Their programmes, the first one open.
    4. Their events.
@@ -37,7 +38,7 @@ export function PersonaPage({ id }: { id: PersonaId }) {
   const p = personas.find((x) => x.id === id)!
   const others = personas.filter((x) => x.id !== id)
   const [a, b] = splitHeadline(p.headline)
-  const { setPersona, arrived } = visitor
+  const { setPersona, arrived, askName } = visitor
   const stepsRef = useRef<HTMLOListElement>(null)
 
   /* phones: the stages scroll sideways; start with "You are here" in view */
@@ -51,7 +52,10 @@ export function PersonaPage({ id }: { id: PersonaId }) {
   useEffect(() => {
     setPersona(id)
     arrived()
-  }, [id, setPersona, arrived])
+    // once the colour has opened and the burst has played: who are we talking to?
+    const t = window.setTimeout(() => askName(true), 1300)
+    return () => window.clearTimeout(t)
+  }, [id, setPersona, arrived, askName])
 
   return (
     <div className="clean" style={themeVars(p.theme)}>
@@ -69,13 +73,26 @@ export function PersonaPage({ id }: { id: PersonaId }) {
             {visitor.firstName ? `Hoi ${visitor.firstName} · ` : ''}{home.ticketRoute} · {p.pathLabel}
           </p>
           <h1 id="persona-title" className="disp c-hero-title mt-6">
-            <span className="block">{a}</span>
-            {b && <span className="block text-accent">{b}</span>}
+            {a}{b && <> <span className="text-accent">{b}</span></>}
           </h1>
           <div className="mt-10 grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-end">
             <p className="c-lede max-w-xl">{p.line}</p>
-            <div className="w-full max-w-md md:justify-self-end">
-              <NameForm nextLabel={p.cta} nextHref="#offers" />
+            <div className="w-full max-w-md md:justify-self-end" aria-live="polite">
+              {visitor.firstName ? (
+                <>
+                  <p className="disp text-[clamp(2.4rem,4.4vw,3.6rem)]">
+                    <span key={visitor.name} className="name-sweep">Hoi {visitor.firstName}!</span>
+                  </p>
+                  <button type="button" onClick={() => askName()} className="mono mt-3 text-muted underline underline-offset-4 hover:text-ink">
+                    Not {visitor.firstName}?
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={() => askName()} className="mono slide-link text-accent">
+                  {home.namePrompt} <span className="slide-arrow"><Arrow /></span>
+                </button>
+              )}
+              <a href="#offers" className="mono slide-link c-under mt-8 w-full">{p.cta} <span className="slide-arrow"><Arrow /></span></a>
             </div>
           </div>
         </section>
@@ -118,7 +135,7 @@ export function PersonaPage({ id }: { id: PersonaId }) {
               {others.map((o) => (
                 <li key={o.id} className="border-b border-white/15">
                   <button type="button" onClick={(e) => visitor.go(o, { x: e.clientX, y: e.clientY })}
-                    className="slide-link flex w-full items-baseline justify-between gap-4 py-5 text-left hover:!text-teal-400">
+                    className="c-hover c-hover-light slide-link flex w-full items-baseline justify-between gap-4 py-5 text-left">
                     <span>
                       <span className="disp block text-3xl font-semibold">{o.pathLabel}</span>
                       <span className="mt-1 block text-white/65">{o.pathText}</span>
@@ -133,6 +150,7 @@ export function PersonaPage({ id }: { id: PersonaId }) {
       </main>
 
       <Footer onReset={visitor.forget} />
+      <NameDialog persona={p} />
     </div>
   )
 }

@@ -23,6 +23,7 @@ export const homePage = defineType({
     text('cursorSail', 'Cursor label over the islands', 16, { group: 'intro', description: 'Shown next to the hoi boat cursor, on computers with a mouse.' }),
     text('cursorGo', 'Cursor label over the boarding pass button', 16, { group: 'intro' }),
     text('namePrompt', 'Hero: name question (before the map)', 40, { group: 'intro' }),
+    text('nameSkip', 'Name question: button to skip it', 20, { group: 'intro', description: 'Clean design: the name is asked after a visitor picks their path. e.g. "Not now".' }),
     text('rememberLabel', 'Hero: “Remember me” tick box', 70, { group: 'intro', description: 'Name and visitor type are only saved in the visitor’s browser when they tick this. Keep it clear that it’s optional.' }),
     text('generalHeadline', 'Hero for visitors who skip: headline', 60, { group: 'intro', description: 'For visitors who click “Just looking around”. The last words get the colour gradient.' }),
     text('generalLine', 'Hero for visitors who skip: text', 160, { group: 'intro', rows: 2 }),

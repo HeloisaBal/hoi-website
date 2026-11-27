@@ -14,13 +14,12 @@ import { PathWorld } from './PathWorld'
 import { OffersSection } from './OffersSection'
 import { WhoWeAre } from './WhoWeAre'
 import { EventsList } from './EventsList'
-import { NameForm } from './NameForm'
 import { ContactSection } from './ContactSection'
 
 /* ------------------------------------------------------------
    Homepage, clean direction (branch clean-design).
-   1. Hero: hoi's line in big type, who hoi is in one sentence, and
-      "What should we call you?" (the name is used on every page).
+   1. Hero: hoi's line in big type and who hoi is in one sentence.
+      (The name is asked on the persona page, right after the path.)
    2. The 3D map: pick your path (founder, investor, company). The
       camera flies to the district, the path's colour covers the
       screen and the visitor lands on their persona page
@@ -69,9 +68,10 @@ export function HoiHome() {
           </h1>
           <div className="mt-10 grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-end">
             <p className="c-lede max-w-xl">{home.generalLine}</p>
-            <div className="w-full max-w-md md:justify-self-end">
-              <NameForm onDone={() => window.setTimeout(() => scrollToId('paths'), 60)} nextLabel={home.generalCta} nextHref="#paths" />
-            </div>
+            <a href="#paths" className="mono slide-link c-under w-full max-w-xs md:justify-self-end"
+              onClick={(e) => { e.preventDefault(); scrollToId('paths') }}>
+              {home.generalCta} <span className="slide-arrow"><Arrow /></span>
+            </a>
           </div>
         </section>
 

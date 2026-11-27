@@ -1393,14 +1393,13 @@ a.ticker-band:hover .ticker-item { color: #2ceccd; }
 .c-row-btn { display: grid; width: 100%; grid-template-columns: 3rem 1fr 1.5rem; gap: 1rem; align-items: baseline; padding: 1.6rem 0; text-align: left; cursor: pointer; }
 @media (min-width: 768px) { .c-row-btn { grid-template-columns: 4.5rem 1fr 2rem; } }
 .c-row-name { display: block; font-size: clamp(2rem, 3.6vw, 3.25rem); font-weight: 600; transition: color .25s ease; }
-.c-row-btn:hover .c-row-name, .c-row-btn[aria-expanded='true'] .c-row-name { color: #8a00e6; }
+.c-row-btn[aria-expanded='true'] .c-row-name { color: var(--accent); }
 .c-row-sign { font-family: var(--font-mono); font-size: 1.25rem; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
 .c-row-btn[aria-expanded='true'] .c-row-sign { transform: rotate(45deg); }
 .c-tag { display: inline-block; margin-left: .75rem; padding: .2rem .5rem; border: 1px solid #8a00e6; color: #8a00e6; vertical-align: middle; }
 
 .c-event { display: grid; gap: .35rem 1.5rem; padding: 1.5rem .25rem; grid-template-columns: 1fr; transition: background-color .25s ease; }
 @media (min-width: 900px) { .c-event { grid-template-columns: 13rem 1fr 15rem 11rem; align-items: baseline; } }
-a.c-event:hover { background: #f7f3fd; }
 
 /* contact + footer (dark) */
 .c-dark { background: var(--color-ink); color: #fff; }
@@ -1447,3 +1446,51 @@ a.c-event:hover { background: #f7f3fd; }
 .path-world-zoom button + button { border-top: 1px solid var(--color-line); }
 .path-world-zoom button:hover { background: var(--color-ink); color: #fff; }
 @media (min-width: 768px) { .path-world-zoom { right: 2.5rem; bottom: 1.5rem; } }
+
+/* rows: on hover, ink rises from the bottom of the row and the text turns white
+   (like GroundUp's showcase). Mouse only; on touch the rows stay as they are. */
+@media (hover: hover) {
+  .c-hover { position: relative; isolation: isolate; transition: padding .5s cubic-bezier(.2,.8,.2,1), color .3s ease; }
+  .c-hover::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--color-ink); transform: scaleY(0); transform-origin: bottom; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  .c-hover:hover, .c-hover:focus-visible { color: #fff; padding-left: 1.4rem; padding-right: 1.4rem; }
+  .c-hover:hover::before, .c-hover:focus-visible::before { transform: scaleY(1); transform-origin: top; }
+  .c-hover:hover .text-muted, .c-hover:focus-visible .text-muted { color: rgb(255 255 255 / .72); }
+  .c-hover:hover .text-accent, .c-hover:hover .c-row-name, .c-hover:focus-visible .text-accent { color: #2ceccd; }
+  .c-hover:hover .c-tag { color: #2ceccd; border-color: #2ceccd; }
+  /* on dark sections: white rises, text turns ink */
+  .c-hover-light::before { background: #fff; }
+  .c-hover-light:hover, .c-hover-light:focus-visible { color: var(--color-ink); }
+  .c-hover-light:hover .text-white\/65 { color: var(--color-muted); }
+}
+@media (hover: hover) and (prefers-reduced-motion: reduce) { .c-hover, .c-hover::before { transition: none; } }
+
+/* the name question (persona pages) */
+.name-dialog { position: fixed; inset: 0; margin: auto; height: fit-content; max-height: calc(100dvh - 2rem); overflow-y: auto; width: min(40rem, calc(100% - 2rem)); max-width: none; padding: 0; border: 1.5px solid var(--color-ink); background: #fff; color: var(--color-ink); overflow: hidden; }
+.name-dialog::backdrop { background: rgb(255 255 255 / .86); }
+.name-dialog[open] { animation: nameIn .6s cubic-bezier(.2,.8,.2,1) both; }
+.name-dialog-bar { display: block; height: 6px; background: var(--accent); transform-origin: left; animation: barIn .7s .1s cubic-bezier(.7,0,.2,1) both; }
+.name-word { display: inline-block; white-space: pre; animation: wordIn .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(.3s + var(--i) * .08s); }
+@keyframes nameIn { from { opacity: 0; transform: translateY(28px); } }
+@keyframes barIn { from { transform: scaleX(0); } }
+@keyframes wordIn { from { opacity: 0; transform: translateY(.45em); } }
+.c-pill-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.c-pill-accent:hover { background: var(--color-ink); border-color: var(--color-ink); }
+/* after "Let's go": a band of the persona's colour sweeps under the greeting */
+.name-sweep { background: linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 0% .12em; animation: sweep .9s .25s cubic-bezier(.7,0,.2,1) forwards; padding-bottom: .08em; }
+@keyframes sweep { to { background-size: 100% .12em; } }
+@media (prefers-reduced-motion: reduce) {
+  .name-dialog[open], .name-dialog-bar, .name-word { animation: none; }
+  .name-sweep { animation: none; background-size: 100% .12em; }
+}
+
+/* chat invitation: the waving hoi figure and its bubble, above the chat button */
+.chat-invite { position: relative; display: flex; align-items: flex-end; gap: .5rem; margin-right: .25rem; animation: invitePop .55s cubic-bezier(.2,1.5,.4,1) both; }
+.chat-invite-bubble { max-width: 15rem; padding: .8rem 1rem; background: #fff; border: 1.5px solid var(--color-ink); text-align: left; font-family: var(--font-sans); font-size: 1rem; line-height: 1.35; color: var(--color-ink); box-shadow: 4px 4px 0 var(--color-ink); transition: transform .2s ease, box-shadow .2s ease; }
+.chat-invite-bubble:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #00d7b8; }
+.chat-invite-close { position: absolute; top: -.7rem; left: -.7rem; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-ink); color: #fff; }
+.chat-invite-figure { width: 3.4rem; height: auto; flex-shrink: 0; overflow: visible; }
+.chat-invite-arm { transform-origin: 50px 40px; animation: wave 2.6s ease-in-out .5s infinite; }
+@keyframes invitePop { from { opacity: 0; transform: translateY(16px) scale(.8); } }
+@keyframes wave { 0%, 40%, 100% { transform: rotate(0); } 8%, 24% { transform: rotate(-22deg); } 16%, 32% { transform: rotate(12deg); } }
+@media (max-width: 640px) { .chat-invite-bubble { max-width: 11rem; font-size: .9rem; } .chat-invite-figure { width: 2.8rem; } }
+@media (prefers-reduced-motion: reduce) { .chat-invite, .chat-invite-arm { animation: none; } }

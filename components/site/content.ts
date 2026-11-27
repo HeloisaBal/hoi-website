@@ -19,6 +19,8 @@ export type HomeTexts = {
   introSub: string
   heroPill: string
   namePrompt: string
+  /** skip button on the name question (clean design) */
+  nameSkip: string
   pathPrompt: string
   pathMore: string
   pathSkip: string
@@ -89,6 +91,8 @@ export type SiteSettings = {
 export type ChatbotTexts = {
   enabled: boolean
   buttonLabel: string
+  /** what the waving figure next to the chat button says (clean design) */
+  inviteText: string
   title: string
   greeting: string
   suggestions: string[]
@@ -143,6 +147,7 @@ export const defaultContent: SiteContent = {
     introSub: 'Im Norden gründen – mit Rückenwind.',
     heroPill: 'Im Norden gründen – mit Rückenwind!',
     namePrompt: 'What should we call you?',
+    nameSkip: 'Not now',
     pathPrompt: 'Which path brings you here?',
     pathMore: 'Researcher or student? Start here:',
     pathSkip: 'Just looking around',
@@ -208,6 +213,7 @@ export const defaultContent: SiteContent = {
   chatbot: {
     enabled: true,
     buttonLabel: 'Ask hoi',
+    inviteText: 'Hoi! Questions? Chat with me.',
     title: 'Ask hoi',
     greeting: 'Hoi! I can answer questions about our programmes, events and the website, in English or German. Or leave us a message and the team gets back to you.',
     suggestions: ['What programmes do you offer?', 'What’s on next?', 'How can my company work with hoi?', 'I want to get in touch'],

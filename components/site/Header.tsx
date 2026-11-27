@@ -88,7 +88,7 @@ export function Header({ active }: { active?: string }) {
             <ul className="c-rows">
               {links.map((l) => (
                 <li key={l.key} className="c-row">
-                  <Link href={l.href} onClick={close} className="slide-link flex items-baseline justify-between py-5">
+                  <Link href={l.href} onClick={close} className="c-hover slide-link flex items-baseline justify-between py-5">
                     <span className="disp text-5xl">{l.label}</span>
                     <span className="slide-arrow text-2xl"><Arrow /></span>
                   </Link>

@@ -49,7 +49,7 @@ export function OffersSection({ persona, only, plural, open: openProp, onOpen }:
             return (
               <li key={o.id} id={`programme-${o.id}`} className="c-row scroll-mt-28">
                 <h3>
-                  <button type="button" className="c-row-btn" aria-expanded={isOpen} aria-controls={panel}
+                  <button type="button" className="c-row-btn c-hover" aria-expanded={isOpen} aria-controls={panel}
                     onClick={() => setOpen(isOpen ? null : o.id)}>
                     <span className="mono text-sm text-muted">{String(i + 1).padStart(2, '0')}</span>
                     <span>
