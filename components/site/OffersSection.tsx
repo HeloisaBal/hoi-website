@@ -14,9 +14,16 @@ import { Arrow } from './shared'
    Content: Sanity → Offers, texts under Homepage → Offers.
    ------------------------------------------------------------ */
 
-export function OffersSection({ persona }: { persona: PersonaId | null }) {
+export function OffersSection({ persona, open: openProp, onOpen }: {
+  persona: PersonaId | null
+  /** which programme is open, when the page controls it (the chosen path opens its first one) */
+  open?: string | null
+  onOpen?: (id: string | null) => void
+}) {
   const { offers, home } = useContent()
-  const [open, setOpen] = useState<string | null>(null)
+  const [openLocal, setOpenLocal] = useState<string | null>(null)
+  const open = openProp !== undefined ? openProp : openLocal
+  const setOpen = onOpen ?? setOpenLocal
   if (!offers.length) return null
   const mine = (forWho: PersonaId[]) => !!persona && forWho.includes(persona)
   const sorted = persona ? [...offers].sort((a, b) => Number(mine(b.for)) - Number(mine(a.for))) : offers
@@ -35,7 +42,7 @@ export function OffersSection({ persona }: { persona: PersonaId | null }) {
             const isOpen = open === o.id
             const panel = `offer-${o.id}`
             return (
-              <li key={o.id} className="c-row">
+              <li key={o.id} id={`programme-${o.id}`} className="c-row scroll-mt-28">
                 <h3>
                   <button type="button" className="c-row-btn" aria-expanded={isOpen} aria-controls={panel}
                     onClick={() => setOpen(isOpen ? null : o.id)}>

@@ -1337,9 +1337,20 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
 .slide-link:hover { color: #8a00e6; }
 .slide-link:hover .slide-arrow { transform: translateX(6px); }
 
-/* announcement bar (Sanity: Highlights) */
-.announce { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem 1rem; padding: .7rem 1.25rem; background: var(--color-ink); color: #fff; text-align: center; }
-.announce-label { color: #2ceccd; }
+/* announcement: a moving band at the top (Sanity: Highlights), closable */
+.ticker { position: relative; overflow: hidden; background: var(--color-ink); color: #fff; }
+.ticker-band { display: block; overflow: hidden; padding-block: .6rem; padding-right: 3rem; }
+.ticker-track { display: flex; width: max-content; animation: ticker 38s linear infinite; }
+.ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
+.ticker-half { display: flex; }
+.ticker-item { display: inline-flex; align-items: baseline; gap: .7rem; padding-right: .7rem; white-space: nowrap; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.05rem, 1.6vw, 1.35rem); letter-spacing: .03em; text-transform: uppercase; line-height: 1; }
+.ticker-label { color: #2ceccd; }
+.ticker-dot { color: rgb(255 255 255 / .55); }
+a.ticker-band:hover .ticker-item { color: #2ceccd; }
+.ticker-close { position: absolute; right: 0; top: 0; bottom: 0; display: grid; place-items: center; width: 2.75rem; background: linear-gradient(90deg, transparent, var(--color-ink) 35%); color: rgb(255 255 255 / .8); }
+.ticker-close:hover { color: #fff; }
+@keyframes ticker { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
 
 /* header */
 .c-header { position: sticky; top: 0; z-index: 50; background: rgb(255 255 255 / .94); border-bottom: 1px solid transparent; transition: border-color .3s ease; }
@@ -1406,3 +1417,9 @@ a.c-event:hover { background: #f7f3fd; }
 .chat-head { background: var(--color-ink); }
 .chat-head h2 { font-weight: 700; letter-spacing: .01em; }
 .chat-bubble { border-radius: .6rem; }
+
+/* name field (clean direction) */
+.c-name-input { width: 100%; border: 0; border-bottom: 1.5px solid var(--color-ink); background: transparent; padding: .2rem 0 .6rem; font-family: var(--font-sans); font-size: clamp(1.6rem, 2.6vw, 2.2rem); color: var(--color-ink); outline: none; }
+.c-name-input::placeholder { color: #a39cb3; }
+.c-name-input:focus-visible { border-bottom-color: #8a00e6; outline: none; }
+.c-check { width: 1.05rem; height: 1.05rem; accent-color: #8a00e6; }
