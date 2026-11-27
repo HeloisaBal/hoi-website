@@ -43,19 +43,9 @@ export type Persona = {
 /** The big path cards on landing, in this order; the other personas are smaller options below. */
 export const MAIN_PATHS: PersonaId[] = ['founder', 'investor', 'company']
 
+/* Clean direction: four visitor types. Researcher was removed (Nov 2026); the id stays
+   in PersonaId so older content tagged "researcher" in Sanity still loads (it is ignored). */
 export const personas: Persona[] = [
-  {
-    id: 'researcher',
-    theme: { c1: '#2ceccd', c2: '#06b6d4', c3: '#003efe', accent: '#0e7490', tint: '#ecfbfd' },
-    word: 'Research',
-    chip: 'a researcher with an idea',
-    headline: 'Your research could be a company.',
-    line: 'We help you take an idea out of the lab: first conversations, funding calls and a team around you.',
-    cta: 'Start with your research',
-    plural: 'researchers',
-    pathLabel: 'Researcher',
-    pathText: 'Turn your research into a company.',
-  },
   {
     id: 'founder',
     theme: { c1: '#c261ff', c2: '#9a00ff', c3: '#003efe', accent: '#8a00e6', tint: '#f8f0ff' },
