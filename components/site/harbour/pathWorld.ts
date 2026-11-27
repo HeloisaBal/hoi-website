@@ -29,7 +29,8 @@ export type PathWorld = {
   /** the district under a point on the canvas (CSS pixels) */
   pickAt: (x: number, y: number) => PersonaId | null
   hover: (id: PersonaId | null) => void
-  flyTo: (id: PersonaId | null) => void
+  /** fly to a district, or back to the overview (`keep`: the chosen district stays coloured) */
+  flyTo: (id: PersonaId | null, keep?: boolean) => void
   dispose: () => void
 }
 
@@ -475,10 +476,10 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   let flight: { from: THREE.Vector3; to: THREE.Vector3; fromCam: THREE.Vector3; toCam: THREE.Vector3; t0: number; ms: number } | null = null
   let atHome = true
   const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-  function flyTo(id: PersonaId | null) {
+  function flyTo(id: PersonaId | null, keep = false) {
     const dd = id ? DISTRICTS[id] : null
     atHome = !dd
-    chosen = dd ? id : null
+    chosen = dd ? id : keep ? chosen : null
     lifts()
     const v = view()
     const to = dd ? new THREE.Vector3(dd.x, 1, dd.z) : v.target

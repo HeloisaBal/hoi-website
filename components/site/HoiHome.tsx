@@ -178,7 +178,7 @@ export function HoiHome() {
             </div>
             <p className="mono text-muted">{home.pathHint}</p>
           </div>
-          <PathWorld paths={mainPaths} selected={persona} hint="" cursorLabel={home.cursorSail}
+          <PathWorld paths={mainPaths} selected={persona} hint="" cursorLabel={home.cursorSail} backLabel={home.generalCta}
             onChoose={(id) => choose(id)} top={null} bottom={null} />
           <div className="wrap flex justify-end py-5">
             <a href="#offers" className="mono slide-link text-muted">{home.pathSkip} <span className="slide-arrow"><Arrow /></span></a>

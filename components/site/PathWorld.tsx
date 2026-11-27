@@ -28,8 +28,10 @@ function webglAvailable() {
   }
 }
 
-export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, bottom }: {
+export function PathWorld({ paths, selected, hint, cursorLabel, backLabel, onChoose, top, bottom }: {
   paths: Persona[]
+  /** label of the button that flies back to the overview after a district is chosen */
+  backLabel?: string
   top: ReactNode
   bottom?: ReactNode
   selected: PersonaId | null
@@ -45,6 +47,8 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
   const labelRefs = useRef<Partial<Record<PersonaId, HTMLButtonElement | null>>>({})
   const busy = useRef(false)
   const [mode, setMode] = useState<'loading' | '3d' | 'flat'>('loading')
+  /** the camera is close to a chosen district (shows the "back to overview" button) */
+  const [zoomed, setZoomed] = useState(false)
 
   useEffect(() => {
     const box = boxRef.current
@@ -121,7 +125,17 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
   }, [])
 
   /* the page cleared the path ("Just looking around", reset): fly back to the overview */
-  useEffect(() => { if (!selected) worldRef.current?.flyTo(null) }, [selected])
+  useEffect(() => {
+    if (selected) return
+    worldRef.current?.flyTo(null)
+    setZoomed(false) // eslint-disable-line react-hooks/set-state-in-effect -- follows the page's choice
+  }, [selected])
+
+  /** back to the whole map; the chosen path stays chosen */
+  function overview() {
+    worldRef.current?.flyTo(null, true)
+    setZoomed(false)
+  }
 
   function choose(id: PersonaId) {
     if (busy.current) return
@@ -131,6 +145,7 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
     const from = r ? { x: r.left + r.width / 2, y: r.bottom + 40 } : { x: window.innerWidth / 2, y: window.innerHeight / 2 }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     worldRef.current?.flyTo(id)
+    if (worldRef.current) setZoomed(true)
     window.setTimeout(() => { busy.current = false; onChoose(id, from) }, reduced || !worldRef.current ? 0 : 850)
   }
 
@@ -200,6 +215,11 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
         ))}
       </div>
       <div className="path-world-top">{top}</div>
+      {zoomed && backLabel && (
+        <button type="button" onClick={overview} className="path-world-back mono">
+          <span aria-hidden="true">←</span> {backLabel}
+        </button>
+      )}
       <div className="path-world-bottom">
         {hint && <p className="path-world-hint" aria-hidden="true">{hint}</p>}
         {bottom}

@@ -1423,3 +1423,9 @@ a.c-event:hover { background: #f7f3fd; }
 .c-name-input::placeholder { color: #a39cb3; }
 .c-name-input:focus-visible { border-bottom-color: #8a00e6; outline: none; }
 .c-check { width: 1.05rem; height: 1.05rem; accent-color: #8a00e6; }
+
+/* 3D map: back to the overview after flying to a district */
+.path-world-back { position: absolute; left: 1rem; top: 1rem; z-index: 3; display: inline-flex; align-items: center; gap: .6rem; min-height: 2.75rem; padding: 0 1.1rem; background: #fff; border: 1.5px solid var(--color-ink); color: var(--color-ink); transition: background-color .25s ease, color .25s ease; }
+.path-world-back:hover { background: var(--color-ink); color: #fff; }
+@media (min-width: 768px) { .path-world-back { left: 2.5rem; top: 1.5rem; } }
+.clean .path-pin[aria-pressed='true'] .path-pin-text { color: rgb(255 255 255 / .82); }
