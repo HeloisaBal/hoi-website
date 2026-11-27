@@ -1,23 +1,34 @@
 import type { Metadata } from 'next'
-import { Archivo, Inter } from 'next/font/google'
+import { Big_Shoulders, DM_Mono, Newsreader } from 'next/font/google'
 import './globals.css'
 import { draftMode } from 'next/headers'
 import { VisualEditing } from 'next-sanity/visual-editing'
-import { HoiCursor } from '@/components/site/HoiCursor'
-import { SectionJump } from '@/components/site/SectionJump'
 import { SanityLive } from '@/sanity/lib/live'
 
-const archivo = Archivo({
-  subsets: ['latin'],
-  weight: ['600', '700', '800', '900'],
+/* Clean direction: a condensed display face for headlines, a serif for
+   reading and a mono for labels (same pairing as GroundUp's Largo). */
+const bigShoulders = Big_Shoulders({
+  subsets: ['latin', 'latin-ext'],
+  weight: 'variable',
+  axes: ['opsz'],
   display: 'swap',
-  variable: '--font-archivo',
+  variable: '--font-big-shoulders',
 })
 
-const inter = Inter({
-  subsets: ['latin'],
+const newsreader = Newsreader({
+  subsets: ['latin', 'latin-ext'],
+  weight: 'variable',
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-newsreader',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500'],
+  display: 'swap',
+  variable: '--font-dm-mono',
 })
 
 export const metadata: Metadata = {
@@ -31,11 +42,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const preview = (await draftMode()).isEnabled
   return (
-    <html lang="en" className={`${archivo.variable} ${inter.variable}`}>
+    <html lang="en" className={`${bigShoulders.variable} ${newsreader.variable} ${dmMono.variable}`}>
       <body>
         {children}
-        <SectionJump />
-        <HoiCursor />
         {/* Studio preview only: drafts appear as the editor types, with click-to-edit outlines */}
         {preview && SanityLive && <SanityLive />}
         {preview && <VisualEditing />}

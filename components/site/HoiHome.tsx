@@ -1,426 +1,181 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { DEFAULT_THEME, MAIN_PATHS, type PersonaId } from './data'
 import { useContent } from './ContentContext'
-import { HighlightCard } from './HighlightCard'
-import { centreOf, prefersReducedMotion, useEffects } from './effects'
-import { HeroBackdrop } from './Backdrop'
-import { Arrow, KEY_NAME, KEY_PERSONA, KEY_REMEMBER, WaveHand, fit, load, rise, save, splitHeadline, stegaClean, themeVars } from './shared'
+import { Arrow, stegaClean, themeVars } from './shared'
+import { askHoi } from './chat/ask'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PointerEffects } from './PointerEffects'
-import { ScrollBoat } from './ScrollBoat'
-import { LogoWindow } from './LogoWindow'
-import { FounderJourney } from './FounderJourney'
+import { AnnouncementBar } from './AnnouncementBar'
+import { PathWorld } from './PathWorld'
 import { OffersSection } from './OffersSection'
 import { WhoWeAre } from './WhoWeAre'
-import { EventsMarquee } from './EventsMarquee'
-import { WaveBridge } from './WaveBridge'
-import { ParallaxShapes } from './ParallaxShapes'
-import { ScienceBusiness } from './ScienceBusiness'
-import { PathWorld } from './PathWorld'
-import { DotField } from './DotField'
+import { EventsList } from './EventsList'
 
-/* Landing: 1. pick a path (or skip), 2. optional first name, 3. the hero for that path */
-type Step = 'persona' | 'name' | 'loading' | 'done'
+/* ------------------------------------------------------------
+   Homepage, clean direction (branch clean-design).
+   1. Hero: hoi's line in big type and who hoi is, in one sentence.
+   2. The 3D map: pick your path (founder, investor, company), or
+      researcher / student below it. The page then puts that path's
+      programmes first. Nothing is stored in the browser.
+   3. Programmes, who we are, events, partners, contact.
+   All texts come from Sanity (same fields as the main branch).
+   ------------------------------------------------------------ */
+
+/** "Im Norden gründen – mit Rückenwind!" → two lines, split at the dash */
+function heroLines(text: string): [string, string] {
+  const m = text.match(/^(.+?)\s+[–—-]\s+(.+)$/)
+  return m ? [m[1], m[2]] : [text, '']
+}
 
 export function HoiHome() {
-  const { personas, partners, team, home, settings, highlight } = useContent()
+  const { personas, partners, team, home, settings, highlight, chatbot } = useContent()
   const [persona, setPersona] = useState<PersonaId | null>(null)
-  const [name, setName] = useState('')
-  const [draft, setDraft] = useState('')
-  /* "Remember me": name and persona are only saved in the browser when ticked */
-  const [remember, setRemember] = useState(false)
-  const [step, setStep] = useState<Step>('name')
-  const [returning, setReturning] = useState(false)
-  const [motion, setMotion] = useState(false)
-  const heroRef = useRef<HTMLElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const { burst, colourWipe, layer } = useEffects()
-
-  /* restore a returning visitor before the first paint, so there's no flash of the name step */
-  useLayoutEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    // anything saved without the "Remember me" tick (older versions of the site) is removed
-    if (load(KEY_REMEMBER) !== '1') { save(KEY_NAME, null); save(KEY_PERSONA, null) }
-    else setRemember(true)
-    const p = load(KEY_PERSONA) as PersonaId | null
-    const n = load(KEY_NAME)
-    if (n) { setName(n); setDraft(n) }
-    if (p && personas.some((x) => x.id === p)) { setPersona(p); setReturning(true); setStep('done') }
-    else if (n) { setReturning(true); setStep('done') } // remembered, but chose "Just looking around"
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [personas])
-
-  /* scroll reveal */
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMotion(true)
-    const els = root.querySelectorAll('.reveal')
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target) }
-      }),
-      { rootMargin: '0px 0px -10% 0px' },
-    )
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
-  }, [])
+  const chosenRef = useRef<HTMLDivElement>(null)
 
   const current = personas.find((p) => p.id === persona) ?? null
   const mainPaths = MAIN_PATHS.flatMap((id) => personas.filter((p) => p.id === id))
-  const heroHeadline = current?.headline ?? home.generalHeadline
-  const heroLine = current?.line ?? home.generalLine
-  const theme = current?.theme ?? DEFAULT_THEME
-  const rawFirst = name.trim().split(/\s+/)[0] ?? ''
-  const firstName = rawFirst.charAt(0).toLocaleUpperCase() + rawFirst.slice(1)
+  const otherPaths = personas.filter((p) => !MAIN_PATHS.includes(p.id))
+  const [line1, line2] = heroLines(home.heroPill)
+  const names = partners.map((p) => stegaClean(p.name))
+  const showAbout = home.aboutPhotos.some(Boolean)
 
-  function heroCentre() {
-    const c = centreOf(heroRef.current)
-    return { x: c.x, y: Math.min(c.y, window.innerHeight * 0.45) }
+  function choose(id: PersonaId) {
+    setPersona(id)
+    window.setTimeout(() => chosenRef.current?.focus({ preventScroll: true }), 50)
   }
-
-  /* step 1 → 2: the name first, then the 3D map to choose a path */
-  function submitName(e: React.FormEvent) {
-    e.preventDefault()
-    const clean = draft.trim().slice(0, 40)
-    const finish = () => {
-      setName(clean)
-      // saved only with consent; unticking removes anything saved before
-      save(KEY_REMEMBER, remember ? '1' : null)
-      save(KEY_NAME, remember ? clean || null : null)
-      save(KEY_PERSONA, remember ? persona : null)
-      // first visit: on to the map; someone who already has a path goes straight to their hero
-      setStep(persona ? 'done' : 'persona')
-      if (clean) {
-        const { x, y } = heroCentre()
-        burst(x, y, [theme.c1, theme.c2, theme.c3, theme.accent], 56)
-      }
-    }
-    if (!clean || prefersReducedMotion()) { finish(); return }
-    setStep('loading')
-    window.setTimeout(finish, 1100)
-  }
-
-  /* step 2 → 3: who they are (on the map). The page turns their colour. */
-  function pick(id: PersonaId, from: Element | { x: number; y: number }) {
-    const p = personas.find((x) => x.id === id)!
-    const { x, y } = from instanceof Element ? centreOf(from) : from
-    const apply = () => {
-      setPersona(id)
-      setReturning(false)
-      if (load(KEY_REMEMBER) === '1') save(KEY_PERSONA, id)
-      // the name was asked before the map (or skipped), so straight to their hero
-      setStep('done')
-    }
-    if (prefersReducedMotion()) { apply(); return }
-    colourWipe(x, y, p.theme.c1, p.theme.c3, p.word)
-    window.setTimeout(apply, 480)
-    window.setTimeout(() => {
-      const c = heroCentre()
-      burst(c.x, c.y, [p.theme.c1, p.theme.c2, p.theme.c3, p.theme.accent], 48)
-    }, 900)
-  }
-
-  function forget() {
-    setPersona(null); setName(''); setDraft(''); setReturning(false); setStep('name')
-    save(KEY_PERSONA, null); save(KEY_NAME, null); save(KEY_REMEMBER, null); setRemember(false)
-    window.setTimeout(() => inputRef.current?.focus(), 80)
-  }
-
-  /* soft spotlight that follows the pointer across the hero */
-  function onPointerMove(e: React.PointerEvent<HTMLElement>) {
-    const el = heroRef.current
-    if (!el || e.pointerType === 'touch') return
-    const r = el.getBoundingClientRect()
-    el.style.setProperty('--gx', `${Math.round(e.clientX - r.left)}px`)
-    el.style.setProperty('--gy', `${Math.round(e.clientY - r.top)}px`)
-    el.style.setProperty('--spot', '1')
-    // -1..1 across the hero, for the photo's 3D tilt
-    el.style.setProperty('--tx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3))
-    el.style.setProperty('--ty', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3))
-  }
-  function onPointerLeave() {
-    const el = heroRef.current
-    if (!el) return
-    el.style.setProperty('--spot', '0')
-    el.style.setProperty('--tx', '0')
-    el.style.setProperty('--ty', '0')
-  }
-
-
-  const mailSubject = encodeURIComponent(
-    stegaClean(`Hoi! ${firstName ? `I'm ${firstName}, ` : ''}${current ? `${current.chip}` : 'a question'}`),
-  )
 
   return (
-    <div ref={rootRef} data-motion={motion ? 'on' : 'off'} className="themed" style={themeVars(theme)}>
-      {layer}
+    <div className="clean" style={themeVars(DEFAULT_THEME)}>
       <PointerEffects />
-      <ScrollBoat />
+      <AnnouncementBar highlight={highlight} />
       <Header active="home" />
-      {/* the announcement pops up as soon as "Welcome to the harbour of ideas" shows
-          (also shown in "Next up at hoi"); visitors can close it */}
-      <HighlightCard highlight={highlight} popIn=".logo-window--intro[data-title-shown]" />
 
-      {/* ================= S4: fly through the logo window, first thing on landing ================= */}
-      <LogoWindow intro title={home.introTitle} sub={home.introSub} />
-
-      {/* ================= HERO ================= */}
-      <section id="top" ref={heroRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}
-        className={`hero relative isolate flex items-center ${step === 'persona' ? 'is-world' : 'min-h-[100svh]'}`}>
-        <HeroBackdrop />
-        <ParallaxShapes />
-        <div className="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
-
-        {/* ---------- STEP 2: which path? The whole screen is the map ---------- */}
-        {step === 'persona' && (
-          <PathWorld paths={mainPaths} selected={persona} hint={home.pathHint} cursorLabel={home.cursorSail}
-            onChoose={(id, from) => pick(id, from)}
-            top={
-              <div className="path-question rise" style={rise(0)}>
-                <h1 className="flex items-center justify-center gap-[0.18em] font-black uppercase leading-[0.88] tracking-[-0.04em] text-ink"
-                  style={{ fontSize: 'clamp(2rem, 4.2vw, 3.4rem)' }}>
-                  Hoi! <WaveHand />
-                </h1>
-                <p id="path-question" className="mt-2 font-display text-lg font-semibold tracking-[-0.01em] text-ink sm:text-2xl">
-                  {home.pathPrompt}
-                </p>
-              </div>
-            }
-            bottom={null} />
-        )}
-
-        {step !== 'persona' && (
-        <div className="container-x py-20 sm:py-28 lg:py-32">
-          <div className={step === 'done' ? 'w-full' : 'mx-auto flex max-w-5xl flex-col items-center text-center'} aria-live="polite">
-
-            {/* ---------- STEP 1: the name (optional), before the map ---------- */}
-            {step === 'name' && (
-              <form key="name" onSubmit={submitName} className="flex w-full flex-col items-center">
-                <span className="hero-pill rise" style={rise(0)}>
-                  <span className="pill-dot" aria-hidden="true" />{home.heroPill}
-                </span>
-                <h1 className="rise mt-8" style={rise(1)}>
-                  <label htmlFor="hoi-name" className="block font-display font-black tracking-[-0.03em] text-ink" style={{ fontSize: 'clamp(2.2rem, 5.5vw, 4rem)', lineHeight: 1.02 }}>
-                    {home.namePrompt}
-                  </label>
-                </h1>
-                <div className="rise mt-10 w-full max-w-lg" style={rise(3)}>
-                  <input
-                    id="hoi-name"
-                    ref={inputRef}
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Your first name"
-                    autoComplete="given-name"
-                    maxLength={40}
-                    className="name-field w-full bg-transparent pb-3 text-center font-display text-[clamp(2rem,5.5vw,3.25rem)] font-bold tracking-[-0.02em] text-ink outline-none"
-                  />
-                  <span className="name-line" aria-hidden="true" />
-                </div>
-                <div className="rise mt-10" style={rise(4)}>
-                  <button type="submit" className="btn-primary group h-14 px-8 text-base sm:text-lg">
-                    {draft.trim() ? 'Let’s go' : 'Continue'}
-                    <Arrow />
-                  </button>
-                </div>
-                <label className="rise mt-6 inline-flex cursor-pointer items-center gap-2.5 text-left text-sm text-muted" style={rise(5)}>
-                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="remember-box" />
-                  <span>{home.rememberLabel}</span>
-                </label>
-              </form>
-            )}
-
-            {/* ---------- loading: setting sail ---------- */}
-            {step === 'loading' && (
-              <div key="loading" className="flex flex-col items-center" role="status">
-                <div className="flex gap-2.5" aria-hidden="true">
-                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
-                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
-                  <span className="dot h-3.5 w-3.5 rounded-full bg-accent" />
-                </div>
-                <p className="rise mt-8 font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl">
-                  Setting sail, {draft.trim().split(/\s+/)[0]}…
-                </p>
-              </div>
-            )}
-
-            {/* ---------- STEP 3: their boarding pass to the harbour of ideas; the stub is the one thing to click ---------- */}
-            {step === 'done' && (
-              <div key={`done-${persona ?? 'all'}`} className="flex w-full flex-col items-center">
-                <article className="ticket rise" style={rise(0)} aria-labelledby="ticket-title">
-                  <div className="ticket-main">
-                    <p className="ticket-kicker">
-                      <span className="pill-dot" aria-hidden="true" />
-                      {home.ticketLabel}
-                    </p>
-                    <h1 id="ticket-title" className="ticket-title">
-                      {(() => {
-                        const [a, b] = splitHeadline(heroHeadline)
-                        return <>{a}{b && <> <span className="grad-text">{b}</span></>}</>
-                      })()}
-                    </h1>
-                    <p className="ticket-line">
-                      {firstName && returning && <span className="font-semibold text-ink">{`Welcome back, ${firstName}. `}</span>}
-                      {heroLine}
-                    </p>
-                    <dl className="ticket-meta">
-                      <div>
-                        <dt>{home.ticketPassenger}</dt>
-                        <dd>{firstName || home.ticketGuest}</dd>
-                      </div>
-                      <div>
-                        <dt>{home.ticketRoute}</dt>
-                        <dd>{current ? current.pathLabel : home.ticketOpenRoute}</dd>
-                      </div>
-                    </dl>
-                  </div>
-
-                  {current ? (
-                    <a href="#offers" className="ticket-stub group" data-cursor={home.cursorGo}>
-                      <span className="ticket-stub-label">{current.cta}</span>
-                      <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
-                      <span className="ticket-barcode" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    <button type="button" onClick={() => setStep('persona')} className="ticket-stub group" data-cursor={home.cursorGo}>
-                      <span className="ticket-stub-label">{home.generalCta}</span>
-                      <span className="ticket-stub-go" aria-hidden="true"><Arrow /></span>
-                      <span className="ticket-barcode" aria-hidden="true" />
-                    </button>
-                  )}
-                </article>
-
-                <div className="rise mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted" style={rise(2)}>
-                  {current && (
-                    <button type="button" onClick={() => setStep('persona')}
-                      className="underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
-                      I’m someone else
-                    </button>
-                  )}
-                  {returning && (
-                    <button type="button" onClick={forget}
-                      className="underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent">
-                      {firstName ? `Not ${firstName}? Start over` : 'Start over'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-      </section>
-
-      {/* ================= the heart of the site: what hoi offers, for this visitor first ================= */}
-      {/* the waves in the path's colours, then the offers slide up over them */}
-      <WaveBridge />
-      <div className="after-waves">
-        <OffersSection persona={persona} plural={current?.plural} />
-      </div>
-
-      {/* ================= who hoi is ================= */}
-      <WhoWeAre />
-
-      {/* ================= S1: how it works, from idea to company (programmes per stage) ================= */}
-      <FounderJourney persona={persona} />
-
-      <ScienceBusiness />
-
-      {/* ================= hoi's events, as one moving banner among many sections ================= */}
-      <EventsMarquee />
-
-      {/* ================= PEOPLE ================= */}
-      <section id="about" className="container-x pt-28">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div className="reveal grid grid-cols-2 gap-4">
-            {home.aboutPhotos.map((ph, i) => (
-              <div key={i} className={`lift aspect-[3/4] overflow-hidden rounded-[1.4rem] ${i === 1 ? 'mt-12 bg-[#e3f9f5] text-teal-700' : 'bg-white text-muted'}`}>
-                {ph ? (
-                  <img src={`${ph.url}?w=600&h=800&fit=crop&auto=format`} alt={ph.alt} className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <span className="flex h-full items-center justify-center p-4 text-center text-sm">
-                    {i === 0 ? 'Photo: founder welcomed with flowers' : 'Photo: pitch at the whiteboard'}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="reveal">
-            <p className="eyebrow">{home.aboutEyebrow}</p>
-            <blockquote className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-              “{home.quote}”
-            </blockquote>
-            <p className="mt-5 text-muted">{home.quoteBy}</p>
-            <a href="#contact" className="mt-7 inline-block font-semibold text-accent hover:underline">{home.aboutLinkText} →</a>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= PARTNERS ================= */}
-      <section className="pt-28">
-        <p className="reveal container-x text-center text-xs font-bold uppercase tracking-[0.14em] text-muted">
-          {home.partnersTitle}
-        </p>
-        <div className="marquee-mask mt-8 overflow-hidden" aria-label="Partners">
-          <ul className="animate-marquee flex w-max gap-4">
-            {[...partners, ...partners].map((p, i) => {
-              const inner = p.logoUrl
-                ? <img src={`${p.logoUrl}?h=96&fit=max&auto=format`} alt={p.name} className="max-h-10 w-auto max-w-[160px] object-contain" loading="lazy" />
-                : p.name
-              const copy = i >= partners.length
-              return (
-                <li key={i} aria-hidden={copy}
-                  className="flex h-20 min-w-[220px] items-center justify-center rounded-2xl border border-line px-6 text-sm font-semibold text-muted">
-                  {p.href
-                    ? <a href={p.href} target="_blank" rel="noopener noreferrer" tabIndex={copy ? -1 : undefined} className="flex items-center hover:text-ink">{inner}</a>
-                    : inner}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </section>
-
-      {/* ================= CONTACT ================= */}
-      <section id="contact" className="container-x pt-28" data-no-highlight>
-        <div className="contact-card reveal grid items-center gap-10 rounded-[2rem] p-8 text-white sm:p-14 lg:grid-cols-2">
-          <DotField />
-          <div className="relative">
-            <h2 key={`c-${firstName}`} className="swap-in font-black uppercase leading-none"
-              style={fit(firstName ? `Hoi ${firstName}, we’re listening.` : home.contactTitle, 'clamp(2.1rem, 5vw, 3.75rem)', '7rem')}>
-              {firstName ? `Hoi ${firstName}, we’re listening.` : home.contactTitle}
-            </h2>
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-white/80">
-              {current
-                ? `Tell us about yourself. We talk to ${current.plural} every week and love hearing new ideas.`
-                : home.contactText}
-            </p>
-            <a href={`mailto:${settings.email}?subject=${mailSubject}`} data-magnetic
-              className="mt-8 inline-flex min-h-12 items-center rounded-full bg-accent px-7 font-semibold transition hover:-translate-y-0.5 hover:brightness-110">
-              {home.contactButton}
+      <main>
+        {/* ================= hero ================= */}
+        <section id="top" className="wrap pb-16 pt-14 sm:pb-24 sm:pt-24" aria-labelledby="hero-title">
+          <p className="mono text-accent">{home.whoTitle}</p>
+          <h1 id="hero-title" className="disp c-hero-title mt-6">
+            <span className="block">{line1}</span>
+            {line2 && <span className="block text-accent">{line2}</span>}
+          </h1>
+          <div className="mt-10 grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-end">
+            <p className="c-lede max-w-xl">{home.generalLine}</p>
+            <a href="#paths" className="mono slide-link c-under w-full max-w-xs md:justify-self-end">
+              {home.generalCta} <span className="slide-arrow"><Arrow /></span>
             </a>
           </div>
-          <div className="relative grid grid-cols-2 gap-5">
-            {team.slice(0, 4).map((t) => (
-              <div key={t.name}>
-                {t.photoUrl
-                  ? <img src={`${t.photoUrl}?w=400&h=400&fit=crop&auto=format`} alt={t.photoAlt || t.name} className="aspect-square w-full rounded-2xl object-cover" loading="lazy" />
-                  : <div className="flex aspect-square items-center justify-center rounded-2xl bg-white/10 text-sm text-white/60">Photo</div>}
-                <p className="mt-3 font-semibold">{t.name}</p>
-                <p className="text-sm text-white/65">{t.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <Footer onReset={persona || name ? forget : undefined} />
+        {/* ================= the 3D map: pick a path ================= */}
+        <section id="paths" className="scroll-mt-20" aria-labelledby="paths-title">
+          <div className="wrap flex flex-wrap items-end justify-between gap-4 pb-6">
+            <h2 id="paths-title" className="disp text-[clamp(2.4rem,4.6vw,4rem)]">{home.pathPrompt}</h2>
+            <p className="mono text-muted">{home.pathHint}</p>
+          </div>
+          <PathWorld paths={mainPaths} selected={persona} hint="" cursorLabel={home.cursorSail}
+            onChoose={(id) => choose(id)} top={null} bottom={null} />
+          <div className="wrap flex flex-wrap items-center gap-x-8 gap-y-3 py-6 text-lg">
+            <span className="text-muted">{home.pathMore}</span>
+            {otherPaths.map((p) => (
+              <button key={p.id} type="button" aria-pressed={persona === p.id} onClick={() => choose(p.id)}
+                className={`slide-link underline decoration-1 underline-offset-[6px] ${persona === p.id ? 'text-accent' : ''}`}>
+                {p.pathLabel}
+              </button>
+            ))}
+            <a href="#offers" className="mono slide-link ml-auto text-muted">{home.pathSkip} <span className="slide-arrow"><Arrow /></span></a>
+          </div>
+
+          {/* the chosen path, in a sentence, with its next step */}
+          {current && (
+            <div ref={chosenRef} tabIndex={-1} aria-live="polite" className="wrap outline-none">
+              <div className="c-rows grid gap-6 py-10 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-end">
+                <div>
+                  <p className="mono text-accent">{home.ticketRoute} · {current.pathLabel}</p>
+                  <p className="disp mt-4 text-[clamp(2.4rem,4.6vw,4rem)]">{current.headline}</p>
+                  <p className="c-lede mt-5 max-w-xl text-muted">{current.line}</p>
+                </div>
+                <div className="flex flex-col gap-4 md:items-end">
+                  <a href="#offers" className="mono slide-link c-under w-full max-w-xs">{current.cta} <span className="slide-arrow"><Arrow /></span></a>
+                  <button type="button" onClick={() => setPersona(null)} className="mono text-muted underline underline-offset-4 hover:text-ink">
+                    {home.pathSkip}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <OffersSection persona={persona} />
+        <WhoWeAre />
+        <EventsList />
+
+        {/* ================= founders (only once there are photos in Sanity) ================= */}
+        {showAbout && (
+          <section id="about" className="wrap pt-28 sm:pt-40" aria-labelledby="about-title">
+            <div className="grid items-end gap-12 lg:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4">
+                {home.aboutPhotos.map((ph, i) => ph && (
+                  <img key={i} src={`${ph.url}?w=600&h=800&fit=crop&auto=format`} alt={ph.alt}
+                    className="aspect-[3/4] w-full object-cover" loading="lazy" />
+                ))}
+              </div>
+              <figure>
+                <p id="about-title" className="mono text-accent">{home.aboutEyebrow}</p>
+                <blockquote className="mt-6 text-[clamp(1.6rem,2.6vw,2.4rem)] leading-snug">“{home.quote}”</blockquote>
+                <figcaption className="mono mt-6 text-muted">{home.quoteBy}</figcaption>
+              </figure>
+            </div>
+          </section>
+        )}
+
+        {/* ================= partners, as one sentence ================= */}
+        {names.length > 0 && (
+          <section className="wrap pb-28 pt-28 sm:pb-40 sm:pt-40" aria-labelledby="partners-title">
+            <h2 id="partners-title" className="mono text-muted">{home.partnersTitle}</h2>
+            <p className="mt-6 max-w-5xl text-[clamp(1.7rem,3vw,2.8rem)] leading-tight">{names.join(', ')}.</p>
+          </section>
+        )}
+
+        {/* ================= contact ================= */}
+        <section id="contact" className="c-dark scroll-mt-20" aria-labelledby="contact-title" data-no-highlight>
+          <div className="wrap grid gap-16 pb-24 pt-24 sm:pt-32 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <div>
+              <h2 id="contact-title" className="disp text-[clamp(3.4rem,8.5vw,8.5rem)]">{home.contactTitle}</h2>
+              <p className="c-lede mt-8 max-w-lg text-white/80">{home.contactText}</p>
+              <a href={`mailto:${settings.email}`} className="mt-10 inline-block break-all text-[clamp(1.4rem,2.6vw,2.3rem)] underline decoration-1 underline-offset-8 hover:text-teal-400">
+                {settings.email}
+              </a>
+              <div className="mt-14 grid max-w-2xl gap-8 sm:grid-cols-2">
+                <a href={`mailto:${settings.email}`} className="slide-link c-under text-xl hover:!text-teal-400">
+                  {home.contactButton} <span className="slide-arrow"><Arrow /></span>
+                </a>
+                {chatbot.enabled && (
+                  <button type="button" onClick={() => askHoi('')} className="slide-link c-under text-left text-xl hover:!text-teal-400">
+                    {chatbot.buttonLabel} <span className="slide-arrow"><Arrow /></span>
+                  </button>
+                )}
+              </div>
+            </div>
+            <ul className="grid grid-cols-2 gap-5 self-end">
+              {team.slice(0, 4).map((t) => (
+                <li key={t.name}>
+                  {t.photoUrl && (
+                    <img src={`${t.photoUrl}?w=480&h=600&fit=crop&auto=format`} alt={t.photoAlt || t.name}
+                      className="mb-4 aspect-[4/5] w-full object-cover grayscale" loading="lazy" />
+                  )}
+                  <p className="text-xl">{t.name}</p>
+                  <p className="mono mt-1 text-white/60">{t.role}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <Footer onReset={persona ? () => setPersona(null) : undefined} />
     </div>
   )
 }

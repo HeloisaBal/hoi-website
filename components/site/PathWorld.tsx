@@ -120,6 +120,9 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* the page cleared the path ("Just looking around", reset): fly back to the overview */
+  useEffect(() => { if (!selected) worldRef.current?.flyTo(null) }, [selected])
+
   function choose(id: PersonaId) {
     if (busy.current) return
     busy.current = true
@@ -198,7 +201,7 @@ export function PathWorld({ paths, selected, hint, cursorLabel, onChoose, top, b
       </div>
       <div className="path-world-top">{top}</div>
       <div className="path-world-bottom">
-        <p className="path-world-hint" aria-hidden="true">{hint}</p>
+        {hint && <p className="path-world-hint" aria-hidden="true">{hint}</p>}
         {bottom}
       </div>
     </div>

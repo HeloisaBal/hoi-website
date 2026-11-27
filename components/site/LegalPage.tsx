@@ -82,7 +82,7 @@ export function PrivacyPage() {
 
 function LegalShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="themed" style={themeVars(DEFAULT_THEME)} lang="de">
+    <div className="themed clean" style={themeVars(DEFAULT_THEME)} lang="de">
       <Header />
       <main className="container-x legal">
         <h1>{title}</h1>

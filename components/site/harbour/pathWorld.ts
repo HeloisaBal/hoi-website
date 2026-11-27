@@ -1,15 +1,15 @@
 /* ------------------------------------------------------------
-   The path world: the whole first screen where visitors choose
-   their path (inspired by thelaend.de). A low-poly landscape with
-   rolling hills, forests, the sea at the back, a river with a
-   bridge, roads, wind turbines, a giant "hoi" on the hill and a
-   blimp. Three districts, one per main path, each built for its
-   persona and outlined in its colour:
+   The path world, clean direction: where visitors choose their
+   path. The same low-poly landscape as the main branch, drawn like
+   an architect's model: white terraced land (each height band a
+   shade, like the contour lines of a sea chart), pale water, grey
+   trees, ink outlines on every building. Colour only where it
+   means something: a district takes its persona's colours while
+   it is pointed at or chosen.
    - founder:  launch pad with a rocket, maker space, workshop, crane
-   - investor: glass towers, a bank with columns, gold coin stacks
-   - company:  factory with smoking chimneys, warehouses, a container
-               port with a gantry crane, trucks driving to the bridge
-   Boats sail on the sea and the river.
+   - investor: glass towers, a bank with columns, coin stacks
+   - company:  factory, warehouses, a container port with a crane
+   A cargo ship sails the river. No blimp, smoke, trucks or sailboats.
 
    Pure three.js, no React (PathWorld.tsx drives it).
    Coordinates: x to the right, z towards the viewer, sea at -z.
@@ -123,7 +123,7 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
   const scene = new THREE.Scene()
-  scene.fog = new THREE.Fog(opts.fog, 40, 90)
+  scene.fog = new THREE.Fog('#ffffff', 40, 90) // the page is white
   const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 300)
   const disposables: { dispose: () => void }[] = []
   const keep = <T extends { dispose: () => void }>(x: T) => { disposables.push(x); return x }
@@ -136,9 +136,26 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   }
   const castAll = (o: THREE.Object3D) => { o.traverse((c) => { c.castShadow = !opts.light; c.receiveShadow = !opts.light }); return o }
 
+  /* ink outlines on every edge sharper than 25°, shared per geometry */
+  const INK = '#170a2b'
+  const lineMat = keep(new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: 0.6 }))
+  const edgeCache = new Map<string, THREE.EdgesGeometry>()
+  const outline = (o: THREE.Object3D) => {
+    const meshes: THREE.Mesh[] = []
+    o.traverse((c) => { if (c instanceof THREE.Mesh && !(c instanceof THREE.InstancedMesh)) meshes.push(c) })
+    for (const m of meshes) {
+      let e = edgeCache.get(m.geometry.uuid)
+      if (!e) { e = keep(new THREE.EdgesGeometry(m.geometry, 25)); edgeCache.set(m.geometry.uuid, e) }
+      m.add(new THREE.LineSegments(e, lineMat))
+    }
+    return o
+  }
+  /* colour that waits: light grey until its district is pointed at or chosen */
+  const REST = new THREE.Color('#e4e0ec')
+
   /* ---------- light ---------- */
-  scene.add(new THREE.HemisphereLight('#ffffff', '#b9e3a6', 1.7))
-  const sun = new THREE.DirectionalLight('#fff6e0', 2.3)
+  scene.add(new THREE.HemisphereLight('#ffffff', '#ebe8f2', 2.4))
+  const sun = new THREE.DirectionalLight('#ffffff', 1.5)
   sun.position.set(-18, 30, 14)
   sun.castShadow = !opts.light
   sun.shadow.mapSize.set(2048, 2048)
@@ -157,8 +174,9 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   terrainGeo = keep(terrainGeo.toNonIndexed())
   const tp = terrainGeo.attributes.position
   const colors = new Float32Array(tp.count * 3)
-  const greens = ['#8bd07f', '#80c876', '#95d789', '#7bc172'].map((c) => new THREE.Color(c))
-  const high = new THREE.Color('#a6dc95'), sand = new THREE.Color('#f1e4b8'), bed = new THREE.Color('#7fb2e6')
+  // terraces: every 0.55 units of height is one band, alternating white and pale lilac
+  const bands = ['#ffffff', '#f2eff7'].map((c) => new THREE.Color(c))
+  const sand = new THREE.Color('#fbfaf6'), bed = new THREE.Color('#e3e0f3')
   const col = new THREE.Color()
   for (let f = 0; f < tp.count; f += 3) {
     const cx = (tp.getX(f) + tp.getX(f + 1) + tp.getX(f + 2)) / 3
@@ -166,8 +184,7 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     const cz = (tp.getZ(f) + tp.getZ(f + 1) + tp.getZ(f + 2)) / 3
     if (cy < -0.25) col.copy(bed)
     else if (cz - coastZ(cx) < 1.6 || distTo(RIVER, cx, cz) < 1.6) col.copy(sand)
-    else if (cy > 1.6) col.copy(high)
-    else col.copy(greens[Math.abs(Math.floor(cx * 1.7 + cz * 2.3)) % greens.length])
+    else col.copy(bands[Math.abs(Math.floor(cy / 0.55)) % bands.length])
     for (let k = 0; k < 3; k++) colors.set([col.r, col.g, col.b], (f + k) * 3)
   }
   terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
@@ -177,7 +194,7 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   scene.add(terrain)
 
   /* ---------- water ---------- */
-  const waterMat = keep(new THREE.MeshStandardMaterial({ color: '#5e9cff', roughness: 0.3, metalness: 0.05, transparent: true, opacity: 0.88 }))
+  const waterMat = keep(new THREE.MeshStandardMaterial({ color: '#ebe9fb', roughness: 1 }))
   const water = new THREE.Mesh(keep(new THREE.PlaneGeometry(W + 80, D + 80)), waterMat)
   water.rotation.x = -Math.PI / 2
   water.position.y = -0.3
@@ -190,9 +207,8 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   const prism = keep(prismGeometry())
   const house = keep(houseGeometry())
   const sphere = keep(new THREE.IcosahedronGeometry(0.5, 0))
-  const white = mat('#ffffff'), grey = mat('#d9d6e0'), dark = mat('#3d3a4a'), road = mat('#bdbac6', { roughness: 1 })
-  const gold = mat('#ffc83d', { metalness: 0.35, roughness: 0.45 })
-  const glass = mat('#b9d6ff', { roughness: 0.25, metalness: 0.2 })
+  const white = mat('#ffffff'), grey = mat('#e4e0ec'), dark = mat(INK), road = mat('#dcd7e6', { roughness: 1 })
+  const glass = mat('#f1f2f8', { roughness: 0.4 })
 
   const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, [x, y, z]: number[], [sx, sy, sz]: number[] = [1, 1, 1], ry = 0) => {
     const o = new THREE.Mesh(geo, m)
@@ -243,7 +259,7 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     block(b, white, 0.7, 0, 0.08, 0.35, 5.2, 0.2)
     block(b, white, -0.7, 0, 0.08, 0.35, 5.2, 0.2)
     for (const z of [-1.2, 1.2]) block(b, grey, 0, z, 1.2, 1, 0.4, -0.95)
-    scene.add(castAll(b))
+    scene.add(outline(castAll(b)))
   }
 
   /* ---------- forests ---------- */
@@ -253,10 +269,10 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     roadLines.some((l) => distTo(l, x, z) < 1.1 + pad) ||
     Math.hypot(x - LETTERS.x, z - LETTERS.z) < 4.2
   {
-    const nTrees = opts.light ? 380 : 900
+    const nTrees = opts.light ? 130 : 260
     const pine = keep(new THREE.ConeGeometry(0.42, 1.3, 6)); pine.translate(0, 0.85, 0)
     const trunkless = keep(new THREE.IcosahedronGeometry(0.55, 0)); trunkless.translate(0, 0.75, 0)
-    const shades = ['#2f9a5b', '#3aa865', '#23864e', '#4cb874'].map((c) => new THREE.Color(c))
+    const shades = ['#e6e2ee', '#dedaea', '#ebe8f2'].map((c) => new THREE.Color(c))
     const tMat = mat('#ffffff', { roughness: 1 })
     const pines = new THREE.InstancedMesh(pine, tMat, nTrees)
     const rounds = new THREE.InstancedMesh(trunkless, tMat, Math.floor(nTrees / 3))
@@ -291,16 +307,16 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     for (let b = 0; b < 3; b++) { const bl = add(rotor, box, white, [0, 0.7, 0], [0.1, 1.4, 0.03]); bl.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), (b * Math.PI * 2) / 3); bl.rotation.z = (b * Math.PI * 2) / 3 }
     t.add(rotor)
     rotors.push(rotor)
-    scene.add(castAll(t))
+    scene.add(outline(castAll(t)))
   }
 
-  /* ---------- the giant "hoi" on the hill (logo colours) ---------- */
+  /* ---------- the giant "hoi" on the hill (ink, the logo's shapes) ---------- */
   {
     const g = new THREE.Group()
     const y0 = groundHeight(LETTERS.x, LETTERS.z) - 0.1
     g.position.set(LETTERS.x, y0, LETTERS.z)
     g.rotation.y = 0.18
-    const purple = mat('#9a00ff'), teal = mat('#00d7b8'), blue = mat('#003efe')
+    const purple = dark, teal = dark, blue = dark
     // h
     block(g, purple, -3.1, 0, 0.8, 3.4, 0.8)
     block(g, purple, -1.7, 0, 0.8, 2.2, 0.8)
@@ -311,14 +327,13 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     // i
     block(g, blue, 2.2, 0, 0.8, 2.2, 0.8)
     add(g, sphere, blue, [2.2, 2.9, 0], [0.9, 0.9, 0.9])
-    scene.add(castAll(g))
+    scene.add(outline(castAll(g)))
   }
 
   /* ---------- districts ---------- */
-  type District = { id: PersonaId; group: THREE.Group; ring: THREE.MeshStandardMaterial; base: THREE.Color; lift: number; liftTo: number }
+  type Tint = { m: THREE.MeshStandardMaterial; to: THREE.Color }
+  type District = { id: PersonaId; group: THREE.Group; tints: Tint[]; lift: number; liftTo: number; glow: number }
   const districts: District[] = []
-  const smoke: { mesh: THREE.Mesh; origin: THREE.Vector3; t: number }[] = []
-  const trucks: { mesh: THREE.Group; t: number; speed: number }[] = []
 
   for (const spec of islands) {
     const d = DISTRICTS[spec.id]
@@ -327,16 +342,24 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     const g = new THREE.Group()
     g.position.set(d.x, 0.3, d.z)
     g.userData.id = spec.id
-    const ringMat = keep(new THREE.MeshStandardMaterial({ color: t.c1, roughness: 0.6, flatShading: true, emissive: t.c1, emissiveIntensity: 0 }))
+    const tints: Tint[] = []
+    const tint = (to: string) => {
+      const m = keep(new THREE.MeshStandardMaterial({ color: REST.clone(), roughness: 0.85, flatShading: true }))
+      tints.push({ m, to: new THREE.Color(to) })
+      return m
+    }
+    const ringMat = keep(new THREE.MeshStandardMaterial({ color: INK, roughness: 0.6, flatShading: true }))
+    tints.push({ m: ringMat, to: new THREE.Color(t.accent) })
     add(g, keep(plotGeometry(d.r + 0.5, d.x * 7, 0.12)), ringMat, [0, -0.02, 0])
-    add(g, keep(plotGeometry(d.r, d.z * 5 + 3, 0.16)), mat('#eeebf3', { roughness: 1 }), [0, 0, 0])
+    add(g, keep(plotGeometry(d.r, d.z * 5 + 3, 0.16)), white, [0, 0, 0])
     const top = 0.16
-    const accent = mat(t.accent), c1 = mat(t.c1), c2 = mat(t.c2), c3 = mat(t.c3)
+    const accent = tint(t.accent), c1 = tint(t.c1), c2 = tint(t.c2), c3 = tint(t.c3)
+    const gold = c2
     const r = rng(Math.round(d.x * 13 + d.z * 7 + 99))
     // plaza trees on every plot
     for (let k = 0; k < 6; k++) {
       const a = r() * Math.PI * 2, rr = d.r - 0.9
-      add(g, cone, mat('#3aa865'), [Math.cos(a) * rr, top + 0.6, Math.sin(a) * rr * 0.9], [0.7, 1.2, 0.7])
+      add(g, cone, mat('#e6e2ee'), [Math.cos(a) * rr, top + 0.6, Math.sin(a) * rr * 0.9], [0.7, 1.2, 0.7])
     }
 
     if (spec.id === 'founder') {
@@ -387,23 +410,19 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
       for (const [x, z, n] of [[2.4, 1.6, 7], [3, 2.4, 5], [1.9, 2.6, 9]] as const) for (let k = 0; k < n; k++) add(g, cyl, gold, [x, top + 0.06 + k * 0.13, z], [0.7, 0.11, 0.7])
       // fountain plaza
       add(g, cyl, white, [2.6, top + 0.05, -1.6], [1.6, 0.12, 1.6])
-      add(g, cyl, mat('#5e9cff', { roughness: 0.3 }), [2.6, top + 0.12, -1.6], [1.3, 0.04, 1.3])
+      add(g, cyl, waterMat, [2.6, top + 0.12, -1.6], [1.3, 0.04, 1.3])
     } else {
-      // factory with sawtooth roofs and chimneys
+      // factory with sawtooth roofs and chimneys (no smoke in the clean direction)
       block(g, white, -0.8, -1.8, 4, 1.3, 2.6, top)
       for (let k = 0; k < 5; k++) add(g, prism, k % 2 ? grey : accent, [-2.4 + k * 0.8, top + 1.3, -1.8], [0.8, 0.6, 2.6])
       for (const x of [0.6, 1.4]) {
         add(g, cyl, white, [x, top + 1.9, -3.2], [0.45, 3.8, 0.45])
         add(g, cyl, accent, [x, top + 3.3, -3.2], [0.47, 0.35, 0.47])
-        for (let k = 0; k < 4; k++) {
-          const puff = add(scene, sphere, mat('#ffffff', { transparent: true, opacity: 0.85 }), [0, 0, 0], [0.5, 0.5, 0.5])
-          smoke.push({ mesh: puff, origin: new THREE.Vector3(d.x + x, 0.3 + top + 3.9, d.z - 3.2), t: k / 4 })
-        }
       }
       // warehouses
       for (const [x, z] of [[2.4, 0.6], [2.4, 2.2]] as const) { block(g, grey, x, z, 2.4, 0.9, 1.2, top); add(g, prism, c1, [x, top + 0.9, z], [1.2, 0.4, 2.4]).rotation.y = Math.PI / 2 }
       // container yard at the riverside, with a gantry crane
-      const cont = [accent, c1, c2, white, mat('#ffb703'), c3]
+      const cont = [accent, c1, c2, white, grey, c3]
       for (let k = 0; k < 18; k++) block(g, cont[k % cont.length], -3.6 + (k % 3) * 0.75, 0.2 + Math.floor(k / 6) * 0.4, 0.7, 0.32, 0.36, top + (Math.floor(k / 3) % 2) * 0.32)
       for (const z of [-0.6, 1.8]) block(g, accent, -5.2, z, 0.18, 2.8, 0.18, top)
       block(g, accent, -5.2, 0.6, 0.2, 0.2, 2.8, top + 2.8)
@@ -413,61 +432,17 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
       block(g, white, -1.6, 2.4, 1.7, 0.1, 1.5, top + 1.8)
     }
 
-    // trucks on the road between the bridge and the company
-    if (spec.id === 'company') {
-      for (let k = 0; k < 2; k++) {
-        const tr = new THREE.Group()
-        block(tr, white, 0, 0.3, 0.42, 0.42, 0.5)
-        block(tr, accent, 0, -0.25, 0.4, 0.36, 0.42)
-        scene.add(castAll(tr))
-        trucks.push({ mesh: tr, t: 0.55 + k * 0.2, speed: k % 2 ? -0.018 : 0.018 })
-      }
-    }
-
-    scene.add(castAll(g))
-    districts.push({ id: spec.id, group: g, ring: ringMat, base: new THREE.Color(t.c1), lift: 0, liftTo: 0 })
+    scene.add(outline(castAll(g)))
+    districts.push({ id: spec.id, group: g, tints, lift: 0, liftTo: 0, glow: 0 })
   }
 
   /* ---------- boats ---------- */
   const riverCurve = new THREE.CatmullRomCurve3(RIVER.slice(0, 6).map(([x, z]) => new THREE.Vector3(x, -0.24, z)))
   const ship = new THREE.Group()
-  block(ship, mat('#9a00ff'), 0, 0, 0.7, 0.3, 2, -0.1)
-  const shipCont = ['#00d7b8', '#ffffff', '#003efe', '#ffb703']
-  for (let k = 0; k < 6; k++) block(ship, mat(shipCont[k % 4]), k % 2 ? 0.17 : -0.17, -0.55 + Math.floor(k / 2) * 0.42, 0.3, 0.24, 0.38, 0.2)
+  block(ship, dark, 0, 0, 0.7, 0.3, 2, -0.1)
+  for (let k = 0; k < 6; k++) block(ship, k % 2 ? white : grey, k % 2 ? 0.17 : -0.17, -0.55 + Math.floor(k / 2) * 0.42, 0.3, 0.24, 0.38, 0.2)
   block(ship, white, 0, 0.75, 0.5, 0.45, 0.35, 0.2)
-  scene.add(castAll(ship))
-  const sailboats: { g: THREE.Group; a: number; r: number; cx: number; cz: number; speed: number }[] = []
-  for (const [i, colr] of ['#00d7b8', '#ff5d8f', '#ffffff'].entries()) {
-    const s = new THREE.Group()
-    block(s, white, 0, 0, 0.3, 0.12, 0.9, -0.05)
-    const sailGeo = keep(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1.1), new THREE.Vector2(0.6, 0)])))
-    const sail = new THREE.Mesh(sailGeo, mat(colr, { side: THREE.DoubleSide }))
-    sail.position.set(0, 0.08, 0.15); sail.rotation.y = Math.PI / 2
-    s.add(sail)
-    scene.add(castAll(s))
-    sailboats.push({ g: s, a: i * 2.1, r: 6 + i * 3, cx: -6 + i * 9, cz: -19 + i * 1.5, speed: 0.05 + i * 0.015 })
-  }
-
-  /* ---------- the hoi blimp ---------- */
-  const blimp = new THREE.Group()
-  add(blimp, sphere, white, [0, 0, 0], [3.2, 1.2, 1.2]).geometry = keep(new THREE.SphereGeometry(0.5, 16, 10))
-  add(blimp, box, mat('#9a00ff'), [-1.6, 0, 0], [0.5, 0.7, 0.06])
-  add(blimp, box, mat('#9a00ff'), [-1.6, 0, 0], [0.5, 0.06, 0.7])
-  add(blimp, box, dark, [0.2, -0.65, 0], [0.7, 0.22, 0.3])
-  {
-    const c = document.createElement('canvas'); c.width = 512; c.height = 128
-    const x = c.getContext('2d')!
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, 512, 128)
-    x.fillStyle = '#8a00e6'; x.font = '900 72px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'
-    x.fillText('hoi startup factory', 256, 66)
-    const tex = keep(new THREE.CanvasTexture(c)); tex.colorSpace = THREE.SRGBColorSpace
-    const bannerMat = keep(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }))
-    const banner = new THREE.Mesh(keep(new THREE.PlaneGeometry(2.6, 0.65)), bannerMat)
-    banner.position.set(0, 0, 0.62)
-    blimp.add(banner)
-    const back = banner.clone(); back.position.z = -0.62; back.rotation.y = Math.PI; blimp.add(back)
-  }
-  scene.add(blimp)
+  scene.add(outline(castAll(ship)))
 
   /* ---------- camera ---------- */
   const controls = new OrbitControls(camera, canvas)
@@ -503,6 +478,8 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   function flyTo(id: PersonaId | null) {
     const dd = id ? DISTRICTS[id] : null
     atHome = !dd
+    chosen = dd ? id : null
+    lifts()
     const v = view()
     const to = dd ? new THREE.Vector3(dd.x, 1, dd.z) : v.target
     const toCam = dd ? to.clone().add(new THREE.Vector3().subVectors(camera.position, controls.target).setLength(16)) : homeCam(v)
@@ -512,9 +489,11 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
 
   /* ---------- hover and picking ---------- */
   let hovered: PersonaId | null = null
+  let chosen: PersonaId | null = null
+  const lifts = () => { for (const d of districts) { d.liftTo = d.id === hovered ? 1 : 0; d.glow = d.id === hovered || d.id === chosen ? 1 : 0 } }
   function hover(id: PersonaId | null) {
     hovered = id
-    for (const d of districts) d.liftTo = d.id === id ? 1 : 0
+    lifts()
   }
   const ray = new THREE.Raycaster()
   const ndc = new THREE.Vector2()
@@ -553,30 +532,6 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     if (shipT > 0.95 || shipT < 0.02) shipDir *= -1
     const sp = riverCurve.getPointAt(shipT), st = riverCurve.getTangentAt(shipT)
     ship.position.copy(sp); ship.rotation.y = Math.atan2(st.x, st.z) + (shipDir < 0 ? Math.PI : 0)
-    for (const s of sailboats) {
-      const a = s.a + time * s.speed
-      s.g.position.set(s.cx + Math.cos(a) * s.r, -0.28 + Math.sin(time * 1.6 + s.a) * 0.03, s.cz + Math.sin(a) * s.r * 0.35)
-      s.g.rotation.y = -a
-    }
-    const ba = time * 0.04
-    blimp.position.set(Math.sin(ba) * 24, 11 + Math.sin(time * 0.5) * 0.3, -6 + Math.cos(ba) * 6)
-    blimp.rotation.y = -ba + (Math.cos(ba) > 0 ? 0 : Math.PI) + Math.PI / 2
-    for (const p of smoke) {
-      p.t = (p.t + dt * 0.18) % 1
-      p.mesh.position.copy(p.origin).add(new THREE.Vector3(p.t * 1.4, p.t * 2.4, p.t * 0.3))
-      p.mesh.scale.setScalar(0.35 + p.t * 0.9)
-      ;(p.mesh.material as THREE.MeshStandardMaterial).opacity = 0.85 * (1 - p.t)
-    }
-    const c = roadCurves[1]
-    for (const tr of trucks) {
-      tr.t += dt * tr.speed
-      if (tr.t > 0.97) tr.t = 0.55
-      if (tr.t < 0.55) tr.t = 0.97
-      const p = c.getPointAt(tr.t), tan = c.getTangentAt(tr.t)
-      const onBridge = p.distanceTo(BRIDGE) < 2.6
-      tr.mesh.position.set(p.x, onBridge ? 0.48 : Math.max(groundHeight(p.x, p.z), 0.05) + 0.1, p.z)
-      tr.mesh.rotation.y = Math.atan2(tan.x, tan.z) + (tr.speed < 0 ? Math.PI : 0)
-    }
   }
 
   function frame(now: number) {
@@ -593,7 +548,12 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     for (const d of districts) {
       d.lift += (d.liftTo - d.lift) * Math.min(1, dt * 10)
       d.group.position.y = 0.3 + d.lift * 0.35
-      d.ring.emissiveIntensity = d.lift * 0.6
+      // colour fades in while pointed at or chosen (instant with reduced motion)
+      const k = opts.reduced ? d.glow : THREE.MathUtils.clamp(d.tints[0].m.userData.k ?? 0, 0, 1)
+      const next = opts.reduced ? d.glow : k + (d.glow - k) * Math.min(1, dt * 8)
+      d.tints[0].m.userData.k = next
+      d.tints[0].m.color.lerpColors(new THREE.Color(INK), d.tints[0].to, next)
+      for (let i = 1; i < d.tints.length; i++) d.tints[i].m.color.lerpColors(REST, d.tints[i].to, next)
     }
     const time = (now - t0) / 1000
     if (!opts.reduced) {
@@ -610,7 +570,7 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
     const fog = scene.fog as THREE.Fog
     const dist = camera.position.distanceTo(controls.target)
     fog.near = dist * 1.05; fog.far = dist * 2.3
-    canvas.style.cursor = hovered ? '' : 'grab' // over a district: the hoi cursor (HoiCursor.tsx) takes over
+    canvas.style.cursor = hovered ? 'pointer' : 'grab'
     renderer.render(scene, camera)
   }
 

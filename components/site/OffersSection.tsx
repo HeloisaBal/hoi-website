@@ -1,62 +1,73 @@
 'use client'
 
+import { useState } from 'react'
 import { useContent } from './ContentContext'
 import type { PersonaId } from './data'
 import { askHoi } from './chat/ask'
-import { Arrow, fit } from './shared'
-import { useInView } from './useInView'
+import { Arrow } from './shared'
 
 /* ------------------------------------------------------------
-   "What hoi offers you": the heart of the homepage. Every offer
-   (Sanity → Offers), with the ones for the visitor's path first and
-   marked "For you". Each card can open the chatbot with a question
-   about that offer. Effects: the cards fly in one after the other
-   when the section comes into view, and tilt with a soft light that
-   follows the mouse (PointerEffects: data-tilt, data-spotlight).
+   What hoi offers (clean direction): a numbered list, like an
+   index. Each programme opens in place to show what it is, what
+   you get and a button that asks the chatbot about it. The ones
+   for the visitor's path come first, marked "For you".
+   Content: Sanity → Offers, texts under Homepage → Offers.
    ------------------------------------------------------------ */
 
-export function OffersSection({ persona, plural }: { persona: PersonaId | null; plural?: string }) {
+export function OffersSection({ persona }: { persona: PersonaId | null }) {
   const { offers, home } = useContent()
-  const { ref, inView } = useInView<HTMLUListElement>()
+  const [open, setOpen] = useState<string | null>(null)
   if (!offers.length) return null
   const mine = (forWho: PersonaId[]) => !!persona && forWho.includes(persona)
   const sorted = persona ? [...offers].sort((a, b) => Number(mine(b.for)) - Number(mine(a.for))) : offers
-  const title = plural ? `${home.offersTitle} ${plural}` : home.offersTitle
 
   return (
-    <section id="offers" className="container-x pt-24 sm:pt-28" aria-labelledby="offers-title">
-      <div className="max-w-3xl">
-        <p className="eyebrow">{home.offersEyebrow}</p>
-        <h2 id="offers-title" className="mt-2 font-black uppercase leading-none" style={fit(title, 'clamp(2.1rem, 5vw, 3.75rem)', '2.75rem')}>
-          {title}
-        </h2>
-        <p className="mt-5 text-lg leading-relaxed text-muted">{home.offersIntro}</p>
-      </div>
+    <section id="offers" className="wrap scroll-mt-24 pt-28 sm:pt-40" aria-labelledby="offers-title">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] lg:gap-24">
+        <div>
+          <p className="mono text-accent">{home.offersEyebrow}</p>
+          <h2 id="offers-title" className="disp mt-4 text-[clamp(3.4rem,7.5vw,7.5rem)]">{home.offersTitle}</h2>
+          <p className="c-lede mt-7 max-w-md">{home.offersIntro}</p>
+        </div>
 
-      <ul ref={ref} className={`offers-grid mt-12 ${inView ? 'is-in' : ''}`}>
-        {sorted.map((o, i) => {
-          const forYou = mine(o.for)
-          return (
-            <li key={o.id} className={`offer-card ${forYou ? 'is-mine' : ''}`} data-tilt data-spotlight="accent"
-              style={{ ['--i' as string]: i }}>
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="offer-name">{o.name}</h3>
-                {forYou && <span className="offer-tag">{home.forYouLabel}</span>}
-              </div>
-              <p className="offer-tagline">{o.tagline}</p>
-              <p className="offer-text">{o.text}</p>
-              {o.points.length > 0 && (
-                <ul className="offer-points">
-                  {o.points.map((pt) => <li key={pt}>{pt}</li>)}
-                </ul>
-              )}
-              <button type="button" className="offer-ask group" onClick={() => askHoi(`Tell me more about ${o.name}`)}>
-                {home.askLabel} <Arrow />
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+        <ol className="c-rows">
+          {sorted.map((o, i) => {
+            const isOpen = open === o.id
+            const panel = `offer-${o.id}`
+            return (
+              <li key={o.id} className="c-row">
+                <h3>
+                  <button type="button" className="c-row-btn" aria-expanded={isOpen} aria-controls={panel}
+                    onClick={() => setOpen(isOpen ? null : o.id)}>
+                    <span className="mono text-sm text-muted">{String(i + 1).padStart(2, '0')}</span>
+                    <span>
+                      <span className="disp c-row-name">
+                        {o.name}
+                        {mine(o.for) && <span className="mono c-tag">{home.forYouLabel}</span>}
+                      </span>
+                      <span className="mt-2 block font-sans text-lg italic normal-case text-muted">{o.tagline}</span>
+                    </span>
+                    <span className="c-row-sign" aria-hidden="true">+</span>
+                  </button>
+                </h3>
+                <div id={panel} hidden={!isOpen} className="pb-8 md:pl-[5.5rem]">
+                  <p className="max-w-2xl text-lg leading-relaxed">{o.text}</p>
+                  {o.points.length > 0 && (
+                    <ul className="mt-5 grid max-w-2xl gap-2">
+                      {o.points.map((pt) => (
+                        <li key={pt} className="flex gap-3 text-lg"><span className="mt-[.7em] h-1.5 w-1.5 shrink-0 bg-accent" aria-hidden="true" />{pt}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <button type="button" className="mono slide-link c-under mt-7 w-full max-w-xs" onClick={() => askHoi(`Tell me more about ${o.name}`)}>
+                    {home.askLabel} <span className="slide-arrow"><Arrow /></span>
+                  </button>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
     </section>
   )
 }

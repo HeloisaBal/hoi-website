@@ -1,30 +1,25 @@
 'use client'
 
 import { useContent } from './ContentContext'
-import { fit } from './shared'
-import { useInView } from './useInView'
 
-/* "Who we are": who hoi is and why it exists, in a few lines
-   (Sanity → Homepage → Who we are). */
+/* "Who we are" (clean direction): one statement in large serif, the
+   points as a plain list beside it (Sanity → Homepage → Who we are). */
 
 export function WhoWeAre() {
   const { home } = useContent()
-  const { ref, inView } = useInView<HTMLDivElement>()
   return (
-    <section id="who" className="container-x pt-24 sm:pt-28" aria-labelledby="who-title">
-      <div ref={ref} className={`who-card grid items-center gap-10 rounded-[2rem] p-8 sm:p-12 lg:grid-cols-[1.2fr_1fr] ${inView ? 'is-in' : ''}`}>
+    <section id="who" className="wrap scroll-mt-24 pt-28 sm:pt-40" aria-labelledby="who-title">
+      <p className="mono text-accent">{home.whoEyebrow}</p>
+      <div className="mt-6 grid gap-12 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-24">
         <div>
-          <p className="eyebrow">{home.whoEyebrow}</p>
-          <h2 id="who-title" className="mt-2 font-black uppercase leading-none" style={fit(home.whoTitle, 'clamp(2rem, 4.4vw, 3.4rem)', '6rem')}>
-            {home.whoTitle}
-          </h2>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">{home.whoText}</p>
+          <h2 id="who-title" className="disp text-[clamp(2.6rem,5vw,4.5rem)]">{home.whoTitle}</h2>
+          <p className="mt-8 text-[clamp(1.35rem,2.2vw,1.9rem)] leading-snug">{home.whoText}</p>
         </div>
-        <ol className="who-points">
-          {home.whoPoints.map((pt, i) => (
-            <li key={pt} style={{ ['--i' as string]: i }}><span className="who-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{pt}</li>
+        <ul className="c-rows self-end">
+          {home.whoPoints.map((pt) => (
+            <li key={pt} className="c-row py-4 text-lg">{pt}</li>
           ))}
-        </ol>
+        </ul>
       </div>
     </section>
   )

@@ -1,5 +1,6 @@
 /* Open the chatbot with a question, from anywhere on the page
-   (e.g. "Ask about this" on an offer). ChatWidget listens for it. */
+   (e.g. "Ask about this" on an offer). ChatWidget listens for it.
+   An empty question only opens the chat. */
 
 export const ASK_EVENT = 'hoi:ask'
 

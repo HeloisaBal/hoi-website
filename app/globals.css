@@ -23,7 +23,7 @@
 
   --color-ink:     #170a2b;
   --color-muted:   #5c5670;
-  --color-line:    #e8e4f0;
+  --color-line:    #d9d4e3;
   --color-surface: #f8f5fd;
 }
 
@@ -31,8 +31,9 @@
   /* persona theme — set at runtime on the page root */
   --color-accent: var(--accent);
   --color-tint: var(--tint);
-  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-big-shoulders), 'Arial Narrow', ui-sans-serif, sans-serif;
+  --font-sans: var(--font-newsreader), Georgia, ui-serif, serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, monospace;
 }
 
 html { scroll-behavior: smooth; }
@@ -1311,3 +1312,97 @@ a.em-card:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3
 .hl-card.is-pop { transform: translateY(40px) scale(.8) rotate(-4deg); transition: opacity .35s ease, transform .6s cubic-bezier(.3,1.6,.5,1); }
 .hl-card.is-pop.is-shown { transform: none; }
 @media (prefers-reduced-motion: reduce) { .hl-card.is-pop, .hl-card.is-pop.is-shown { transform: none; } }
+
+
+/* ============================================================
+   CLEAN DIRECTION (branch clean-design)
+   White ground, ink type, hoi purple as the one accent. Brand teal
+   and blue appear only in the 3D map and the pointer sparkles.
+   Type: Big Shoulders (headlines, uppercase), Newsreader (reading),
+   DM Mono (labels, navigation).
+   ============================================================ */
+.clean { --accent: #8a00e6; background: #fff; color: var(--color-ink); font-family: var(--font-sans); }
+.clean ::selection { background: #8a00e6; color: #fff; }
+.clean :focus-visible { outline: 2px solid #8a00e6; outline-offset: 3px; }
+
+.disp { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .01em; line-height: .88; }
+.mono { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+.wrap { width: 100%; max-width: 90rem; margin-inline: auto; padding-inline: 1.25rem; }
+@media (min-width: 768px) { .wrap { padding-inline: 2.5rem; } }
+@media (min-width: 1280px) { .wrap { padding-inline: 4rem; } }
+
+/* arrow that slides on hover (links and rows) */
+.slide-link { transition: color .25s ease; }
+.slide-link .slide-arrow { display: inline-block; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.slide-link:hover { color: #8a00e6; }
+.slide-link:hover .slide-arrow { transform: translateX(6px); }
+
+/* announcement bar (Sanity: Highlights) */
+.announce { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem 1rem; padding: .7rem 1.25rem; background: var(--color-ink); color: #fff; text-align: center; }
+.announce-label { color: #2ceccd; }
+
+/* header */
+.c-header { position: sticky; top: 0; z-index: 50; background: rgb(255 255 255 / .94); border-bottom: 1px solid transparent; transition: border-color .3s ease; }
+.c-header.is-scrolled { border-bottom-color: var(--color-line); }
+.c-nav-link { position: relative; padding-block: .4rem; color: var(--color-ink); }
+.c-nav-link::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.c-nav-link:hover::after, .c-nav-link[aria-current='page']::after { transform: scaleX(1); }
+.c-pill { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1.3rem; border: 1.5px solid var(--color-ink); border-radius: 999px; transition: background-color .25s ease, color .25s ease; }
+.c-pill:hover { background: var(--color-ink); color: #fff; }
+.c-menu { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: #fff; }
+
+/* hero */
+.c-hero-title { font-size: clamp(3.6rem, 11vw, 10.5rem); line-height: 1.04; }
+.c-lede { font-size: clamp(1.2rem, 1.8vw, 1.45rem); line-height: 1.45; }
+
+/* the 3D map, framed in the page */
+.clean .path-world { height: clamp(30rem, 68vh, 44rem); border-top: 1.5px solid var(--color-ink); border-bottom: 1px solid var(--color-line); background: #fff; }
+.clean .path-world-bottom { pointer-events: none; }
+.clean .path-world-hint { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 400; color: var(--color-muted); background: rgb(255 255 255 / .9); border-radius: 0; }
+.clean .path-pin { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: .7rem; padding: .7rem .9rem; border-radius: 0; background: #fff; border: 1.5px solid var(--color-ink); box-shadow: none; text-align: left; transition: background-color .25s ease, color .25s ease; }
+.clean .path-pin::before { width: .55rem; height: .55rem; box-shadow: none; background: var(--c2); }
+.clean .path-pin::after { border-right: 1.5px solid var(--color-ink); border-bottom: 1.5px solid var(--color-ink); border-radius: 0; bottom: -8px; width: 12px; height: 12px; }
+.clean .path-pin.is-hot, .clean .path-pin:hover { scale: 1; box-shadow: none; background: var(--color-ink); color: #fff; }
+.clean .path-pin.is-hot .path-pin-text, .clean .path-pin:hover .path-pin-text { color: rgb(255 255 255 / .75); }
+.clean .path-pin.is-hot::after, .clean .path-pin:hover::after { background: var(--color-ink); }
+.clean .path-pin[aria-pressed='true'] { background: #8a00e6; border-color: #8a00e6; color: #fff; }
+.clean .path-pin-label { font-weight: 700; font-size: 1.3rem; letter-spacing: .01em; }
+.clean .path-pin-text { font-family: var(--font-sans); font-size: .85rem; max-width: 22ch; }
+.clean .path-pin-go { border-radius: 0; background: transparent; color: inherit; width: auto; height: auto; }
+.clean .path-grid { gap: 0; border-top: 1.5px solid var(--color-ink); }
+.clean .path-card { border-radius: 0; background: #fff; color: var(--color-ink); border-bottom: 1px solid var(--color-line); box-shadow: none; }
+.clean .path-card:hover { transform: none; box-shadow: none; color: #8a00e6; }
+.clean .path-text { color: var(--color-muted); }
+.clean .path-word { display: none; }
+.clean .path-go { background: transparent; color: inherit; }
+
+/* rows with a top rule: path list, programmes, events */
+.c-rows { border-top: 1.5px solid var(--color-ink); }
+.c-row { border-bottom: 1px solid var(--color-line); }
+.c-row-btn { display: grid; width: 100%; grid-template-columns: 3rem 1fr 1.5rem; gap: 1rem; align-items: baseline; padding: 1.6rem 0; text-align: left; cursor: pointer; }
+@media (min-width: 768px) { .c-row-btn { grid-template-columns: 4.5rem 1fr 2rem; } }
+.c-row-name { display: block; font-size: clamp(2rem, 3.6vw, 3.25rem); font-weight: 600; transition: color .25s ease; }
+.c-row-btn:hover .c-row-name, .c-row-btn[aria-expanded='true'] .c-row-name { color: #8a00e6; }
+.c-row-sign { font-family: var(--font-mono); font-size: 1.25rem; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.c-row-btn[aria-expanded='true'] .c-row-sign { transform: rotate(45deg); }
+.c-tag { display: inline-block; margin-left: .75rem; padding: .2rem .5rem; border: 1px solid #8a00e6; color: #8a00e6; vertical-align: middle; }
+
+.c-event { display: grid; gap: .35rem 1.5rem; padding: 1.5rem .25rem; grid-template-columns: 1fr; transition: background-color .25s ease; }
+@media (min-width: 900px) { .c-event { grid-template-columns: 13rem 1fr 15rem 11rem; align-items: baseline; } }
+a.c-event:hover { background: #f7f3fd; }
+
+/* contact + footer (dark) */
+.c-dark { background: var(--color-ink); color: #fff; }
+.c-under { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: .7rem; border-bottom: 1.5px solid currentColor; }
+
+/* the pointer sparkles sit over everything but never catch clicks */
+.sparkles { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .sparkles { display: none; } }
+
+/* chat, clean direction: an ink launcher and a flat header, square-ish corners */
+.chat-launcher { background: var(--color-ink) !important; box-shadow: none !important; border-radius: 999px; font-family: var(--font-mono); font-weight: 500; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+.chat-launcher:hover { background: #8a00e6 !important; filter: none; }
+.chat-panel { border-radius: .75rem; }
+.chat-head { background: var(--color-ink); }
+.chat-head h2 { font-weight: 700; letter-spacing: .01em; }
+.chat-bubble { border-radius: .6rem; }

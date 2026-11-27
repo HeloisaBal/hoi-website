@@ -3,49 +3,31 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Arrow } from './shared'
-import { useSlidingIndicator } from './useSlidingIndicator'
+import { useContent } from './ContentContext'
 
 const links = [
-  { href: '/#offers', label: 'What we offer', key: 'offers' },
-  { href: '/#who', label: 'Who we are', key: 'who' },
-  { href: '/#contact', label: 'Contact', key: 'contact' },
+  { href: '/#offers', label: 'Programmes', key: 'offers' },
+  { href: '/events', label: 'Events', key: 'events' },
+  { href: '/#who', label: 'About', key: 'who' },
 ] as const
 
-function LangSwitch({ className = '' }: { className?: string }) {
+/* DE/EN: German content is not set up yet, so EN is the only working option. */
+function LangSwitch() {
   return (
-    <span className={`flex gap-0.5 rounded-full border border-line bg-white/70 p-1 text-xs font-semibold ${className}`}>
-      <button type="button" className="rounded-full px-2.5 py-1 text-muted transition-colors hover:text-ink">DE</button>
-      <button type="button" aria-pressed="true" className="rounded-full bg-ink px-2.5 py-1 text-white">EN</button>
+    <span className="mono flex items-center gap-2 text-muted">
+      <span>DE</span>
+      <span aria-hidden="true">/</span>
+      <span className="text-ink" aria-current="true">EN</span>
     </span>
   )
 }
 
-/* Links in the full-screen phone menu, with the sliding highlight (effect 4).
-   Its own component so the highlight attaches when the menu opens. */
-function MobileLinks({ active, onNavigate }: { active?: string; onNavigate: () => void }) {
-  const listRef = useSlidingIndicator<HTMLUListElement>('.menu-link')
-  return (
-    <ul ref={listRef} className="relative isolate flex flex-col">
-      <span data-indicator aria-hidden="true" className="menu-indicator" />
-      {links.map((l, i) => (
-        <li key={l.key} className="rise border-b border-line" style={{ animationDelay: `${0.05 + i * 0.06}s` }}>
-          <Link href={l.href} onClick={onNavigate} aria-current={active === l.key ? 'page' : undefined}
-            className={`menu-link group flex items-center justify-between px-3 py-5 font-display text-[2.1rem] font-black uppercase leading-none tracking-[-0.03em] transition-colors hover:text-accent ${active === l.key ? 'text-accent' : 'text-ink'}`}>
-            {l.label}
-            <span className="text-2xl text-muted transition group-hover:translate-x-1 group-hover:text-accent"><Arrow /></span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/* Site header: transparent over the hero, frosted once the page scrolls.
-   On phones the links move into a full-screen menu behind a menu button. */
+/* Site header (clean direction): logo, mono links, an outlined "Say hoi".
+   A thin rule appears once the page scrolls. Phones: a full-screen menu. */
 export function Header({ active }: { active?: string }) {
+  const { settings } = useContent()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const navRef = useSlidingIndicator<HTMLDivElement>('.nav-link')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -54,14 +36,13 @@ export function Header({ active }: { active?: string }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /* while the menu is open: no page scrolling behind it, Esc closes it,
-     and it closes by itself if the screen gets wide enough for the full nav */
+  /* menu open: no page scroll behind it, Esc closes it, and it closes itself on wide screens */
   useEffect(() => {
     if (!open) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    const wide = window.matchMedia('(min-width: 640px)')
+    const wide = window.matchMedia('(min-width: 768px)')
     const onWide = () => { if (wide.matches) setOpen(false) }
     window.addEventListener('keydown', onKey)
     wide.addEventListener('change', onWide)
@@ -75,42 +56,50 @@ export function Header({ active }: { active?: string }) {
   const close = () => setOpen(false)
 
   return (
-    <header className={`site-header sticky top-0 z-50 ${scrolled || open ? 'is-scrolled' : ''}`}>
-      <div className="container-x flex h-16 items-center justify-between gap-3 sm:h-[72px]">
+    <header className={`c-header ${scrolled ? 'is-scrolled' : ''}`}>
+      <div className="wrap flex h-[4.5rem] items-center justify-between gap-4 sm:h-20">
         <Link href="/#top" aria-label="hoi startup factory, home" className="shrink-0" onClick={close}>
           <img src="/logo.png" alt="hoi startup factory" className="h-8 w-auto sm:h-9" />
         </Link>
 
-        <nav aria-label="Main" className="flex items-center gap-2 text-[15px] font-medium sm:gap-1">
-          <div ref={navRef} className="nav-links relative hidden items-center sm:flex">
-            <span data-indicator aria-hidden="true" className="nav-indicator" />
-            {links.slice(0, 3).map((l) => (
-              <Link key={l.key} href={l.href} aria-current={active === l.key ? 'page' : undefined}
-                className={`nav-link relative ${active === l.key ? 'is-active' : ''}`}>{l.label}</Link>
+        <nav aria-label="Main" className="mono flex items-center gap-8">
+          <div className="hidden items-center gap-8 md:flex">
+            {links.map((l) => (
+              <Link key={l.key} href={l.href} aria-current={active === l.key ? 'page' : undefined} className="c-nav-link">{l.label}</Link>
             ))}
+            <LangSwitch />
           </div>
-          <LangSwitch className="mx-3 hidden sm:flex" />
-          <Link href="/#contact" className="btn-primary h-10 px-4 text-sm sm:px-5" onClick={close}>Say hoi</Link>
-
-          {/* menu button, phones only */}
+          <Link href="/#contact" className="c-pill" onClick={close}>Say hoi</Link>
           <button type="button" onClick={() => setOpen((o) => !o)}
             aria-expanded={open} aria-controls="mobile-menu" aria-label={open ? 'Close menu' : 'Open menu'}
-            className={`burger sm:hidden ${open ? 'is-open' : ''}`}>
+            className={`burger md:hidden ${open ? 'is-open' : ''}`}>
             <span /><span />
           </button>
         </nav>
       </div>
 
       {open && (
-        <div id="mobile-menu" className="menu-panel sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <nav aria-label="Mobile" className="container-x flex flex-1 flex-col pt-6">
-            <MobileLinks active={active} onNavigate={close} />
-
-            <div className="rise mt-auto flex items-center justify-between gap-4 pb-8 pt-10" style={{ animationDelay: '0.32s' }}>
+        <div id="mobile-menu" className="c-menu md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="wrap flex h-[4.5rem] items-center justify-between">
+            <img src="/logo.png" alt="" className="h-8 w-auto" />
+            <button type="button" onClick={close} aria-label="Close menu" className="burger is-open"><span /><span /></button>
+          </div>
+          <nav aria-label="Mobile" className="wrap flex flex-1 flex-col pt-6">
+            <ul className="c-rows">
+              {links.map((l) => (
+                <li key={l.key} className="c-row">
+                  <Link href={l.href} onClick={close} className="slide-link flex items-baseline justify-between py-5">
+                    <span className="disp text-5xl">{l.label}</span>
+                    <span className="slide-arrow text-2xl"><Arrow /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mono mt-auto flex items-center justify-between gap-4 pb-8 pt-10">
               <LangSwitch />
-              <div className="flex gap-5 text-sm font-medium text-muted">
-                <a href="https://www.instagram.com/hoi_startup_factory/" className="hover:text-ink">Instagram</a>
-                <a href="https://www.linkedin.com/company/hoi-startup-factory/" className="hover:text-ink">LinkedIn</a>
+              <div className="flex gap-5 text-muted">
+                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-ink">Instagram</a>
+                <a href={settings.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-ink">LinkedIn</a>
               </div>
             </div>
           </nav>

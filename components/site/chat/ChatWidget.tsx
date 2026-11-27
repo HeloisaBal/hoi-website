@@ -60,12 +60,13 @@ export function ChatWidget({ contactForm = false }: {
   useEffect(() => {
     const onAsk = (e: Event) => {
       const q = (e as CustomEvent<string>).detail
-      if (typeof q !== 'string' || !q) return
+      if (typeof q !== 'string') return
       setAccent(pageAccent())
       const p = load(KEY_PERSONA) as PersonaId | null
       setPersona(p)
       setOpen(true)
-      void sendRef.current(q, p)
+      if (q) void sendRef.current(q, p) // an empty question just opens the chat
+
     }
     window.addEventListener(ASK_EVENT, onAsk)
     return () => window.removeEventListener(ASK_EVENT, onAsk)
