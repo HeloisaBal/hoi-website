@@ -215,6 +215,12 @@ export function PathWorld({ paths, selected, hint, cursorLabel, backLabel, onCho
         ))}
       </div>
       <div className="path-world-top">{top}</div>
+      {mode === '3d' && (
+        <div className="path-world-zoom" role="group" aria-label="Map zoom">
+          <button type="button" aria-label="Zoom in" onClick={() => worldRef.current?.zoomBy(0.8)}>+</button>
+          <button type="button" aria-label="Zoom out" onClick={() => worldRef.current?.zoomBy(1.25)}>−</button>
+        </div>
+      )}
       {zoomed && backLabel && (
         <button type="button" onClick={overview} className="path-world-back mono">
           <span aria-hidden="true">←</span> {backLabel}

@@ -31,6 +31,8 @@ export type PathWorld = {
   hover: (id: PersonaId | null) => void
   /** fly to a district, or back to the overview (`keep`: the chosen district stays coloured) */
   flyTo: (id: PersonaId | null, keep?: boolean) => void
+  /** zoom in (factor < 1) or out (factor > 1), within the map's limits */
+  zoomBy: (factor: number) => void
   dispose: () => void
 }
 
@@ -455,6 +457,25 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   controls.maxPolarAngle = 1.12
   controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }
   canvas.style.touchAction = 'pan-y' // vertical swipes keep scrolling the page
+  /* zoom: pinch on a trackpad, or Ctrl/⌘ + scroll with a mouse. A plain scroll keeps
+     scrolling the page, so the map never traps the visitor. (OrbitControls' own zoom
+     stays off because it takes every scroll.) */
+  const MIN_DIST = 9
+  const maxDist = () => view().dist * 1.6
+  function zoomBy(factor: number) {
+    flight = null
+    atHome = false
+    const off = new THREE.Vector3().subVectors(camera.position, controls.target)
+    off.setLength(THREE.MathUtils.clamp(off.length() * factor, MIN_DIST, maxDist()))
+    camera.position.copy(controls.target).add(off)
+    controls.update()
+  }
+  const onWheel = (e: WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return // trackpad pinch arrives as ctrl + wheel
+    e.preventDefault()
+    zoomBy(Math.exp(THREE.MathUtils.clamp(e.deltaY, -60, 60) * 0.01))
+  }
+  canvas.addEventListener('wheel', onWheel, { passive: false })
 
   /* Wide screens: the sea at the back. Tall screens: the land turned a quarter,
      so the three districts run down the screen. */
@@ -587,8 +608,9 @@ export function createPathWorld(canvas: HTMLCanvasElement, islands: IslandSpec[]
   }
 
   return {
-    frame, resize, labelPositions, pickAt, hover, flyTo,
+    frame, resize, labelPositions, pickAt, hover, flyTo, zoomBy,
     dispose() {
+      canvas.removeEventListener('wheel', onWheel)
       controls.dispose()
       disposables.forEach((d) => d.dispose())
       renderer.dispose()
